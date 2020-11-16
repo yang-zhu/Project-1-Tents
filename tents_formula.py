@@ -1,3 +1,5 @@
+import subprocess
+
 class Grid:
     def __init__(self, height, width, trees, tents_in_row, tents_in_col):
         assert height == len(tents_in_row), width == len(tents_in_col)
@@ -57,7 +59,7 @@ def noTentIndex(r, c):
     '''Neighboring cells of a cell with tent can't have tents.'''
     return boundFilter([(r_n, c_n) for r_n in [r-1, r, r+1] for c_n in [c-1, c, c+1] if not ((r_n == r) and (c_n == c))], grid.height, grid.width)
 
-grid = gridInput('tent-inputs/tents-8x8-e1.txt')
+grid = gridInput('tent-inputs/tents-25x30-t.txt')
 # No two tents are adjacent in an of the (up to) 8 directions
 for r1 in range(grid.height):
     for c1 in range(grid.width):
@@ -123,7 +125,6 @@ def countTents(count, row_or_col, dim1, limit):
                         clauses.append((-countVarConv(num, dim2), -dimConv(i)))
     return clauses
 
-
 # Every row has exactly the required number of tents
 for r in range(grid.height):
     count = grid.tents_in_row[r]
@@ -134,8 +135,35 @@ for c in range(grid.width):
     count = grid.tents_in_col[c]
     clauses += countTents(count, 'column', c, grid.height-1)
 
-# Output the clauses in DIMACS CNF format
-print('p', 'cnf', len(varDict), len(clauses))
-for clause in clauses:
-    print(' '.join(map(str, clause)), '0')
 
+# Output the clauses in DIMACS CNF format as a string
+res = 'p cnf ' + str(len(varDict)) + ' ' + str(len(clauses)) + '\n'
+res += '\n'.join([' '.join(map(str, clause)) + ' 0' for clause in clauses]) + '\n'
+
+# Feeds the cnf formula into cadical
+solver_process = subprocess.Popen(['/Users/Emmayang/Documents/Bachelor/3.Semester/SAT Solving/Übung/cadical-sc2020-45029f8/build/cadical', '-q'], stdin = subprocess.PIPE, stdout=subprocess.PIPE, encoding='utf8')
+
+(solution, _) = solver_process.communicate(input = res)
+
+positive = set()  # Stores all the positiv assignments, including the locations of tents
+for line in solution.split('\n'):
+    if len(line) < 2:
+        continue
+    (x, *rest) = line.split()
+    if x == 'v':
+        for var in rest:
+            if int(var) > 0:
+                positive.add(int(var)) 
+
+# Generates the solution grid
+for r in range(grid.height):
+    for c in range(grid.width):
+        if tentVar(r, c) in positive:
+            print('Δ', end=' ')
+        elif (r, c) in grid.trees:
+            print('T', end=' ')
+        else:
+            print('.', end=' ')
+    print(grid.tents_in_row[r])
+[print(num, end=' ') for num in grid.tents_in_col]
+print()
