@@ -1,4 +1,9 @@
 import subprocess
+import sys
+
+if len(sys.argv) != 3:
+    print('Please input two arguments: <path of the CaDiCal prorgam> <path of the grid file>')
+    exit(1)
 
 class Grid:
     def __init__(self, height, width, trees, tents_in_row, tents_in_col):
@@ -27,6 +32,7 @@ def gridInput(gridFile):
         tents_in_col = [int(t) for t in f.readline().split()]
         return Grid(height, width, trees, tents_in_row, tents_in_col)
 
+grid = gridInput(sys.argv[2])
 clauses = [] # Stores all the clauses
 varDict = {}  # Stores all the generated variables
 
@@ -59,7 +65,7 @@ def noTentIndex(r, c):
     '''Neighboring cells of a cell with tent can't have tents.'''
     return boundFilter([(r_n, c_n) for r_n in [r-1, r, r+1] for c_n in [c-1, c, c+1] if not ((r_n == r) and (c_n == c))], grid.height, grid.width)
 
-grid = gridInput('tent-inputs/tents-25x30-t.txt')
+
 # No two tents are adjacent in an of the (up to) 8 directions
 for r1 in range(grid.height):
     for c1 in range(grid.width):
@@ -92,14 +98,14 @@ for r in range(grid.height):
 
 def countTents(count, row_or_col, dim1, limit):
     '''Every row/column has exactly the required number of tents.'''   
-    def dimConv(dim2):
+    def tentVarSwap(dim2):
         '''Adapts tentVar to row_or_col.'''
         if row_or_col == 'row':
             return tentVar(dim1, dim2)
         else:
             return tentVar(dim2, dim1)
     
-    def countVarConv(count, dim2):
+    def countVarSwap(count, dim2):
         '''Adapts countVar to row_or_col.'''
         if row_or_col == 'row':
             return countVar(count, dim1, dim2, dim1, limit)
@@ -108,21 +114,21 @@ def countTents(count, row_or_col, dim1, limit):
    
     clauses = []
     if count == 0:
-        clauses += [(-dimConv(dim),) for dim in range(limit+1)]
+        clauses += [(-tentVarSwap(dim),) for dim in range(limit+1)]
     else:
-        clauses.append((-dimConv(0), countVarConv(count-1, 1)))
-        clauses.append((dimConv(0), countVarConv(count, 1)))
+        clauses.append((-tentVarSwap(0), countVarSwap(count-1, 1)))
+        clauses.append((tentVarSwap(0), countVarSwap(count, 1)))
         for dim2 in range(1, limit+1):
             for num in range(count+1):
                 if num < limit + 1 - dim2 and num > 0:
-                    clauses.append((-dimConv(dim2), -countVarConv(num, dim2), countVarConv(num-1, dim2+1)))
-                    clauses.append((dimConv(dim2), -countVarConv(num, dim2), countVarConv(num, dim2+1)))
+                    clauses.append((-tentVarSwap(dim2), -countVarSwap(num, dim2), countVarSwap(num-1, dim2+1)))
+                    clauses.append((tentVarSwap(dim2), -countVarSwap(num, dim2), countVarSwap(num, dim2+1)))
                 elif num == limit + 1 - dim2:
                     for i in range(dim2, limit+1):
-                        clauses.append((-countVarConv(num, dim2), dimConv(i)))
+                        clauses.append((-countVarSwap(num, dim2), tentVarSwap(i)))
                 elif num == 0:
                     for i in range(dim2, limit+1):
-                        clauses.append((-countVarConv(num, dim2), -dimConv(i)))
+                        clauses.append((-countVarSwap(num, dim2), -tentVarSwap(i)))
     return clauses
 
 # Every row has exactly the required number of tents
@@ -140,8 +146,8 @@ for c in range(grid.width):
 res = 'p cnf ' + str(len(varDict)) + ' ' + str(len(clauses)) + '\n'
 res += '\n'.join([' '.join(map(str, clause)) + ' 0' for clause in clauses]) + '\n'
 
-# Feeds the cnf formula into cadical
-solver_process = subprocess.Popen(['/Users/Emmayang/Documents/Bachelor/3.Semester/SAT Solving/Übung/cadical-sc2020-45029f8/build/cadical', '-q'], stdin = subprocess.PIPE, stdout=subprocess.PIPE, encoding='utf8')
+# Feeds the cnf formula into CaDiCal
+solver_process = subprocess.Popen([sys.argv[1], '-q'], stdin = subprocess.PIPE, stdout=subprocess.PIPE, encoding='utf8')
 
 (solution, _) = solver_process.communicate(input = res)
 
