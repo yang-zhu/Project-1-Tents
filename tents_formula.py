@@ -66,7 +66,7 @@ def noTentIndex(r, c):
     return boundFilter([(r_n, c_n) for r_n in [r-1, r, r+1] for c_n in [c-1, c, c+1] if not ((r_n == r) and (c_n == c))], grid.height, grid.width)
 
 
-# No two tents are adjacent in an of the (up to) 8 directions
+# No two tents are adjacent in any of the (up to) 8 directions
 for r1 in range(grid.height):
     for c1 in range(grid.width):
         for (r2, c2) in noTentIndex(r1, c1):
@@ -146,6 +146,8 @@ for c in range(grid.width):
 res = 'p cnf ' + str(len(varDict)) + ' ' + str(len(clauses)) + '\n'
 res += '\n'.join([' '.join(map(str, clause)) + ' 0' for clause in clauses]) + '\n'
 
+print("running solver with", len(varDict), "variables and", len(clauses), "clauses")
+
 # Feeds the cnf formula into CaDiCal
 solver_process = subprocess.Popen([sys.argv[1], '-q'], stdin = subprocess.PIPE, stdout=subprocess.PIPE, encoding='utf8')
 
@@ -159,7 +161,11 @@ for line in solution.split('\n'):
     if x == 'v':
         for var in rest:
             if int(var) > 0:
-                positive.add(int(var)) 
+                positive.add(int(var))
+    elif x == 's' and rest == ['UNSATISFIABLE']:
+        print('UNSATISFIABLE')
+        exit()
+         
 
 # Generates the solution grid
 for r in range(grid.height):
@@ -171,5 +177,6 @@ for r in range(grid.height):
         else:
             print('.', end=' ')
     print(grid.tents_in_row[r])
-[print(num, end=' ') for num in grid.tents_in_col]
+for num in grid.tents_in_col:
+    print(num, end=' ')
 print()
