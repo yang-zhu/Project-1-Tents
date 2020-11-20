@@ -6,11 +6,12 @@ if len(sys.argv) != 3:
     exit(1)
 
 class Grid:
-    def __init__(self, height, width, trees, tents_in_row, tents_in_col):
+    def __init__(self, height, width, trees, empty, tents_in_row, tents_in_col):
         assert height == len(tents_in_row), width == len(tents_in_col)
         self.height = height
         self.width = width
         self.trees = trees
+        self.empty = empty
         self.tents_in_row = tents_in_row
         self.tents_in_col = tents_in_col
     
@@ -30,7 +31,8 @@ def gridInput(gridFile):
                 if cell == 'T':
                     trees.add((lineIndex, cellIndex))
         tents_in_col = [int(t) for t in f.readline().split()]
-        return Grid(height, width, trees, tents_in_row, tents_in_col)
+        empty = set((r, c) for r in range(height) for c in range(width) if (r, c) not in trees)
+        return Grid(height, width, trees, empty, tents_in_row, tents_in_col)
 
 grid = gridInput(sys.argv[2])
 clauses = [] # Stores all the clauses
@@ -47,11 +49,11 @@ def tentVar(r, c):
     assert r < grid.height and c < grid.width
     return generateVar(('tent', r, c))
 
-def treeVar(r, c, r_tent, c_tent):
-    '''The tree in cell (r, c) matches the tent in cell (r_tent, c_tent).'''
+def arrowVar(r, c, r_tent, c_tent):
+    '''There is an arrow pointing from each tree (r, c) to the tent it owns.'''
     assert r_tent in range(grid.height) and c_tent in range(grid.width)
     assert r in range(grid.height) and c in range(grid.width)
-    return generateVar(('tree', r, c, r_tent, c_tent))
+    return generateVar(('arrow', r, c, r_tent, c_tent))
 
 def countVar(count, start_row, start_col, end_row, end_col):
     '''The cells from (start_row, start_col) to (end_row, end_col) contain count many tents.'''
@@ -86,15 +88,15 @@ for (r, c) in grid.trees:
     neighbor_cells = boundFilter([(r-1, c), (r+1, c), (r, c-1), (r, c+1)], grid.height, grid.width)
 
     # Every arrow points to a tent
-    clauses += [(-treeVar(r, c, r1, c1), tentVar(r1, c1)) for (r1, c1) in neighbor_cells]
+    clauses += [(-arrowVar(r, c, r1, c1), tentVar(r1, c1)) for (r1, c1) in neighbor_cells]
     
     # Every tree has at least one arrow
-    clause = tuple(treeVar(r, c, r1, c1) for (r1, c1) in neighbor_cells)   
+    clause = tuple(arrowVar(r, c, r1, c1) for (r1, c1) in neighbor_cells)   
     clauses.append(clause)    
     
     # Every tree has at most one arrow
     for ((r1, c1), (r2, c2)) in pair_clause_helper(neighbor_cells):
-        clauses.append((-treeVar(r, c, r1, c1), -treeVar(r, c, r2, c2)))
+        clauses.append((-arrowVar(r, c, r1, c1), -arrowVar(r, c, r2, c2)))
     
 # There is exactly one arrow pointing to every tent
 for r in range(grid.height):
@@ -104,11 +106,11 @@ for r in range(grid.height):
         
         # There is at least one arrow pointing to every tent
         clause = [-tentVar(r, c)]
-        clause += [treeVar(r1, c1, r, c) for (r1, c1) in tree_cells]
+        clause += [arrowVar(r1, c1, r, c) for (r1, c1) in tree_cells]
         clauses.append(tuple(clause))
         
         # There is at most one arrow pointing to every tent
-        clauses += [(-treeVar(r1, c1, r, c), -treeVar(r2, c2, r, c)) for ((r1, c1), (r2, c2)) in pair_clause_helper(tree_cells)]
+        clauses += [(-arrowVar(r1, c1, r, c), -arrowVar(r2, c2, r, c)) for ((r1, c1), (r2, c2)) in pair_clause_helper(tree_cells)]
 
 
 def countTents(count, row_or_col, dim1, limit):
