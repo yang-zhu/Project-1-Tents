@@ -112,23 +112,30 @@ for (r, c) in grid.empty:
 
 
 def countTents(count, empty_cells):
+    if count > len(empty_cells):
+        return [(1,),(-1,)]
     clauses = []
     if count == 0:
         clauses += [(-tentVar(r, c),) for (r, c) in empty_cells]
     else:
-        clauses.append((-tentVar(*empty_cells[0]), countVar(count-1, *empty_cells[1], *empty_cells[-1])))
-        clauses.append((tentVar(*empty_cells[0]), countVar(count, *empty_cells[1], *empty_cells[-1])))
-        for i in range(1, len(empty_cells)):
-            for num in range(count+1):
-                if num < len(empty_cells) - i and num > 0:
-                    clauses.append((-tentVar(*empty_cells[i]), -countVar(num, *empty_cells[i], *empty_cells[-1]), countVar(num-1, *empty_cells[i+1], *empty_cells[-1])))
-                    clauses.append((tentVar(*empty_cells[i]), -countVar(num, *empty_cells[i], *empty_cells[-1]), countVar(num, *empty_cells[i+1], *empty_cells[-1])))
-                elif num == len(empty_cells) - i:
-                    for j in range(i, len(empty_cells)):
-                        clauses.append((-countVar(num, *empty_cells[i], *empty_cells[-1]), tentVar(*empty_cells[j])))
-                elif num == 0:
-                    for j in range(i, len(empty_cells)):
-                        clauses.append((-countVar(num, *empty_cells[i], *empty_cells[-1]), -tentVar(*empty_cells[j])))
+        if len(empty_cells) > 1:
+            clauses.append((-tentVar(*empty_cells[0]), countVar(count-1, *empty_cells[1], *empty_cells[-1])))
+            clauses.append((tentVar(*empty_cells[0]), countVar(count, *empty_cells[1], *empty_cells[-1])))
+            for i in range(1, len(empty_cells)):
+                for num in range(count+1):
+                    if num < len(empty_cells) - i and num > 0:
+                        clauses.append((-tentVar(*empty_cells[i]), -countVar(num, *empty_cells[i], *empty_cells[-1]), countVar(num-1, *empty_cells[i+1], *empty_cells[-1])))
+                        clauses.append((tentVar(*empty_cells[i]), -countVar(num, *empty_cells[i], *empty_cells[-1]), countVar(num, *empty_cells[i+1], *empty_cells[-1])))
+                    elif num == len(empty_cells) - i:
+                        for j in range(i, len(empty_cells)):
+                            clauses.append((-countVar(num, *empty_cells[i], *empty_cells[-1]), tentVar(*empty_cells[j])))
+                    elif num == 0:
+                        for j in range(i, len(empty_cells)):
+                            clauses.append((-countVar(num, *empty_cells[i], *empty_cells[-1]), -tentVar(*empty_cells[j])))
+        else:
+            assert len(empty_cells) == count == 1
+            clauses.append((tentVar(*empty_cells[0]),))
+
     return clauses
 
 # Every row has exactly the required number of tents
