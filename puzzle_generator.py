@@ -39,6 +39,3 @@ while solution != None:
     solution = solveGrid(sys.argv[1], grid.withoutTents(), grid.tents())
 
 grid.printPuzzle()
-
-print()
-grid.printSolution(grid.tents())

@@ -1,6 +1,6 @@
 import subprocess
-import sys
-
+import argparse
+from display_solution import display
 
 class Grid:
     def __init__(self, height, width, trees, tents_in_row, tents_in_col):
@@ -239,15 +239,21 @@ def solveGrid(cadical_path, grid, excluded_sol = None):
 
 
 if __name__ == '__main__':
-    if len(sys.argv) != 3:
-        print('Please input two arguments: <path of the CaDiCal prorgam> <path of the grid file>')
-        exit(1)
+    parser = argparse.ArgumentParser(description="Solve 'Tents' puzzles.")
+    parser.add_argument('cadical', help='path to CaDiCal')
+    parser.add_argument('input_file', help='height of the grid')
+    parser.add_argument('-i', '--image', action='store_true', help='display the solution graphically')
+    args = parser.parse_args()
 
-    grid = gridInput(sys.argv[2])
-    solution = solveGrid(sys.argv[1], grid)
+    grid = gridInput(args.input_file)
+    solution = solveGrid(args.cadical, grid)
 
     # Prints the solution
     if solution == None:
         print('UNSATISFIABLE')
     else:
         grid.printSolution(solution)
+        if args.image:
+            display(grid, solution)
+    
+    
