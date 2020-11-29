@@ -31,7 +31,7 @@ def gridInput(gridFile):
         empty = set((r, c) for r in range(height) for c in range(width) if (r, c) not in trees)
         return Grid(height, width, trees, empty, tents_in_row, tents_in_col)
 
-def solveGrid(cadical_path, grid):
+def solveGrid(cadical_path, grid, excluded_sol = None):
     clauses = [] # Stores all the clauses
     varDict = {}  # Stores all the generated variables
 
@@ -58,7 +58,7 @@ def solveGrid(cadical_path, grid):
         return generateVar(('count', count, start_row, start_col, end_row, end_col))
 
     def boundFilter(lis, height, width):
-        '''Filters out coordinates that are are occupied by trees or out of bounds of a grid.'''
+        '''Filters out coordinates that are occupied by trees or out of bounds of a grid.'''
         return [(x, y) for (x, y) in lis if x >= 0 and x < height if y >= 0 and y < width if (x, y) not in grid.trees]
 
     def boundFilterTree(lis, height, width):
@@ -69,6 +69,11 @@ def solveGrid(cadical_path, grid):
         '''Neighboring cells of a cell with tent can't have tents.'''
         return boundFilter([(r_n, c_n) for r_n in [r-1, r, r+1] for c_n in [c-1, c, c+1] if not ((r_n == r) and (c_n == c))], grid.height, grid.width)
 
+
+    # Rule out the given solution
+    if excluded_sol != None:
+        clauses.append(tuple(-tentVar(*cell) for cell in excluded_sol))
+    
 
     # No two tents are adjacent in any of the (up to) 8 directions
     for (r1, c1) in grid.empty:
