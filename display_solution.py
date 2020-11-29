@@ -2,22 +2,25 @@ from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QGridLayout, QScrollA
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtCore import Qt
 import sys
+from os import path
 
+def assetPath(filename):
+    return path.join(path.dirname(__file__), 'assets', filename)
 
 class ShowGrid(QWidget):
     def __init__(self, g, s, size):
         super().__init__()
         self.grid = g
         self.solution = s
-        cell_size = 25
-        if (size.height()-160)/self.grid.height > cell_size:
-            cell_size = int((size.height()-160)/self.grid.height)
+        cell_size = 35
+        # if (size.height()-160)/self.grid.height > cell_size:
+        #     cell_size = int((size.height()-160)/self.grid.height)
 
         self.setFixedWidth(cell_size*(self.grid.width+1))
         self.setFixedHeight(cell_size*(self.grid.height+1))
 
-        tent = QPixmap('assets/tent.png')
-        tree = QPixmap('assets/tree.png')
+        tent = QPixmap(assetPath('tent.png'))
+        tree = QPixmap(assetPath('tree.png'))
 
         layout = QGridLayout()
         layout.setVerticalSpacing(1)
@@ -71,8 +74,7 @@ def display(grid, solution):
         background-color: rgb(201, 187, 113)
     }
     QScrollArea#container {
-        /* background-image: url(assets/background1.jpg); */
-        background-image: url(assets/background1.jpg);
+        background-image: url(""" + assetPath('background1.jpg') + """);
     }
     QWidget#board {
         /* background-color: #7ca6d7; */
