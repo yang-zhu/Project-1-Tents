@@ -3,17 +3,92 @@ import sys
 
 
 class Grid:
-    def __init__(self, height, width, trees, empty, tents_in_row, tents_in_col):
+    def __init__(self, height, width, trees, tents_in_row, tents_in_col):
         assert height == len(tents_in_row), width == len(tents_in_col)
         self.height = height
         self.width = width
         self.trees = trees
-        self.empty = empty
+        self.empty = set((r, c) for r in range(height) for c in range(width) if (r, c) not in trees)
         self.tents_in_row = tents_in_row
         self.tents_in_col = tents_in_col
     
-    def __str__(self):
-        return str({'height': self.height,'width': self.width, 'trees': self.trees, 'tents in row': self.tents_in_row, 'tents in column': self.tents_in_col})
+    def withinBounds(self, lis):
+        return [(x, y) for (x, y) in lis if x >= 0 and x < self.height if y >= 0 and y < self.width]
+
+    def withinBoundsNoTree(self, lis):
+        '''Filters out coordinates that are occupied by trees or out of bounds.'''
+        return [(x, y) for (x, y) in self.withinBounds(lis) if (x, y) not in self.trees]
+    
+    def withinBoundsTrees(self, lis):
+        '''Filters out coordinates that are not occupied by trees or out of bounds of a grid .'''
+        return [(x, y) for (x, y) in self.withinBounds(lis) if (x, y) in self.trees]
+    
+    def tentNeighbors(self, r, c):
+        '''Neighboring cells of a tent can't have tents.'''
+        return self.withinBoundsNoTree([(r_n, c_n) for r_n in [r-1, r, r+1] for c_n in [c-1, c, c+1] if not ((r_n == r) and (c_n == c))])
+    
+    def treeNeighbors(self, r, c):
+        '''Returns the empty neighboring cells of a tree.'''
+        return self.withinBoundsNoTree([(r-1, c), (r+1, c), (r, c-1), (r, c+1)])            
+    
+    def printSolution(self, solution):
+        for r in range(self.height):
+            for c in range(self.width):
+                if (r, c) in solution:
+                    print('Δ', end=' ')
+                elif (r, c) in self.trees:
+                    print('T', end=' ')
+                else:
+                    print('.', end=' ')
+            print(self.tents_in_row[r])
+        for num in self.tents_in_col:
+            print(num, end=' ')
+        print()
+    
+
+class GridWithTents(Grid):
+    def __init__(self, height, width):
+        Grid.__init__(self, height, width, set(), [0 for _ in range(height)], [0 for _ in range(width)])
+        self.tent_tree_pair = {}
+    
+    def tents(self):
+        return self.tent_tree_pair.keys()
+
+    def addTreeTent(self, tree, tent):
+        if tree not in self.empty or tent not in self.empty or any(cell in self.tents() for cell in self.tentNeighbors(*tent)):
+            return False
+        self.trees.add(tree)
+        self.empty.remove(tree)
+        self.empty.remove(tent)
+        self.tent_tree_pair[tent] = tree
+        self.tents_in_row[tent[0]] += 1
+        self.tents_in_col[tent[1]] += 1
+        return True
+    
+    def delTreeTent(self, tent):
+        tree = self.tent_tree_pair[tent]
+        self.trees.remove(tree)
+        self.empty.add(tree)
+        self.empty.add(tent)
+        del self.tent_tree_pair[tent]
+        self.tents_in_row[tent[0]] -= 1
+        self.tents_in_col[tent[1]] -= 1
+    
+    def withoutTents(self):
+        return Grid(self.height, self.width, self.trees, self.tents_in_row, self.tents_in_col)
+    
+    def printPuzzle(self):
+        print(self.height, self.width)
+        for r in range(self.height):
+            for c in range(self.width):
+                if (r,c) in self.trees:
+                    print('T', end='')
+                else:
+                    print('.', end='')
+            print(' ' + str(self.tents_in_row[r]))
+        for c in range(self.width):
+            print(self.tents_in_col[c], end=' ')
+        print()
 
 def gridInput(gridFile):
     '''Reads the grid input.'''
@@ -28,8 +103,7 @@ def gridInput(gridFile):
                 if cell == 'T':
                     trees.add((lineIndex, cellIndex))
         tents_in_col = [int(t) for t in f.readline().split()]
-        empty = set((r, c) for r in range(height) for c in range(width) if (r, c) not in trees)
-        return Grid(height, width, trees, empty, tents_in_row, tents_in_col)
+        return Grid(height, width, trees, tents_in_row, tents_in_col)
 
 def solveGrid(cadical_path, grid, excluded_sol = None):
     clauses = [] # Stores all the clauses
@@ -57,18 +131,6 @@ def solveGrid(cadical_path, grid, excluded_sol = None):
         '''The cells from (start_row, start_col) to (end_row, end_col) contain count many tents.'''
         return generateVar(('count', count, start_row, start_col, end_row, end_col))
 
-    def boundFilter(lis, height, width):
-        '''Filters out coordinates that are occupied by trees or out of bounds of a grid.'''
-        return [(x, y) for (x, y) in lis if x >= 0 and x < height if y >= 0 and y < width if (x, y) not in grid.trees]
-
-    def boundFilterTree(lis, height, width):
-        '''Filters out coordinates that are not occupied by trees or out of bounds of a grid .'''
-        return [(x, y) for (x, y) in lis if x >= 0 and x < height if y >= 0 and y < width if (x, y) in grid.trees]
-
-    def noTentIndex(r, c):
-        '''Neighboring cells of a cell with tent can't have tents.'''
-        return boundFilter([(r_n, c_n) for r_n in [r-1, r, r+1] for c_n in [c-1, c, c+1] if not ((r_n == r) and (c_n == c))], grid.height, grid.width)
-
 
     # Rule out the given solution
     if excluded_sol != None:
@@ -77,7 +139,7 @@ def solveGrid(cadical_path, grid, excluded_sol = None):
 
     # No two tents are adjacent in any of the (up to) 8 directions
     for (r1, c1) in grid.empty:
-        for (r2, c2) in noTentIndex(r1, c1):
+        for (r2, c2) in grid.tentNeighbors(r1, c1):
             clauses.append((-tentVar(r1, c1), -tentVar(r2, c2)))
 
 
@@ -87,7 +149,7 @@ def solveGrid(cadical_path, grid, excluded_sol = None):
 
     # Every tree has exactly one arrow
     for (r, c) in grid.trees:
-        neighbor_cells = boundFilter([(r-1, c), (r+1, c), (r, c-1), (r, c+1)], grid.height, grid.width)
+        neighbor_cells = grid.treeNeighbors(r,c)
 
         # Every arrow points to a tent
         clauses += [(-arrowVar(r, c, r1, c1), tentVar(r1, c1)) for (r1, c1) in neighbor_cells]
@@ -102,7 +164,7 @@ def solveGrid(cadical_path, grid, excluded_sol = None):
         
     # There is exactly one arrow pointing to every tent
     for (r, c) in grid.empty:
-        tree_cells = boundFilterTree([(r-1, c), (r+1, c), (r, c-1), (r, c+1)], grid.height, grid.width)
+        tree_cells = grid.withinBoundsTrees([(r-1, c), (r+1, c), (r, c-1), (r, c+1)])
         
         # There is at least one arrow pointing to every tent
         clause = [-tentVar(r, c)]
@@ -155,11 +217,8 @@ def solveGrid(cadical_path, grid, excluded_sol = None):
     res = 'p cnf ' + str(len(varDict)) + ' ' + str(len(clauses)) + '\n'
     res += '\n'.join([' '.join(map(str, clause)) + ' 0' for clause in clauses]) + '\n'
 
-    print("running solver with", len(varDict), "variables and", len(clauses), "clauses...")
-
     # Feeds the cnf formula into CaDiCal
     solver_process = subprocess.Popen([cadical_path, '-q'], stdin = subprocess.PIPE, stdout=subprocess.PIPE, encoding='utf8')
-
     (solution, _) = solver_process.communicate(input = res)
 
     positive = set()  # Stores all the positiv assignments, including the locations of tents
@@ -191,15 +250,4 @@ if __name__ == '__main__':
     if solution == None:
         print('UNSATISFIABLE')
     else:
-        for r in range(grid.height):
-            for c in range(grid.width):
-                if (r, c) in solution:
-                    print('Δ', end=' ')
-                elif (r, c) in grid.trees:
-                    print('T', end=' ')
-                else:
-                    print('.', end=' ')
-            print(grid.tents_in_row[r])
-        for num in grid.tents_in_col:
-            print(num, end=' ')
-        print()
+        grid.printSolution(solution)
