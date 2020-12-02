@@ -7,7 +7,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     args.input_file='/Users/macair/Documents/GitHub/Project-1-Tents/test.txt'   
-    args.cadical='/Users/macair/Documents/GitHub/Project-1-Tents/save.txt'
+    args.cadical='/Users/macair/Downloads/cadical-sc2020-45029f8/build/cadical'
 
 
     grid = gridInput(args.input_file)
@@ -17,7 +17,7 @@ if __name__ == '__main__':
     if solution == None:
         print('There is no solution to this puzzle, please re-enter')
     else:
-        path = '/Users/macair/Documents/GitHub/Project-1-Tents/test.txt'
+        path = '/Users/macair/Documents/GitHub/Project-1-Tents/save.txt'
         f = open(path, 'a+')   
         for r in range(grid.height):
              for c in range(grid.width):
