@@ -1,6 +1,9 @@
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
+from .. import tents_formula_v2 
+#from tents_formula_v2 import solveGrid,gridInput
+import argparse
 import sys
 
 class PuzzleBolck(QLabel):
@@ -27,80 +30,90 @@ class PuzzleBolck(QLabel):
             self.clicked.emit(self.i, self.j)
 
 
-class NumberBlock(QWidget):
+class NumberBlock(QLineEdit):
     def __init__(self, i, j, max, minSize):
         super().__init__()
         self.x = i
         self.y = j
-        self.inputLine = QLineEdit(self)
-        self.inputLine.setObjectName("number_block")
-        self.inputLine.setText("0")
+        self.setObjectName("number_block")
+        self.setText("0")
         self.vlidator = QIntValidator(0, max, self)
-        self.inputLine.setValidator(self.vlidator)
+        self.setValidator(self.vlidator)
         self.initUI(minSize)
 
     def initUI(self, minSize):
         self.setFixedSize(minSize, minSize)
+    
+    def getValue(self):
+        return int(self.Text())
 
 
 class Board(QWidget):
     def __init__(self, size):
         super().__init__()
         self.puzzles = {}
+        self.trees = {}
         self.puzzleMaker(size)
         self.adjustSize()
         self.setObjectName('board')
         self.setMinimumSize(35*int(size["rowSize"]), 35*int(size["columnSize"]))
 
     def puzzleMaker(self, size):
-        row_size = int(size["rowSize"])
-        column_size = int(size["columnSize"])
+        self.row_size = int(size["rowSize"])
+        self.column_size = int(size["columnSize"])
         layout = QGridLayout()
         layout.setVerticalSpacing(1)
         layout.setHorizontalSpacing(1)
-        maxSize = row_size if (row_size > column_size) else column_size
+        maxSize = self.row_size if (self.row_size > self.column_size) else self.column_size
         if (500 / maxSize) < 50:
             minSize = 35
         else:
             minSize = 50
-        for i in range(row_size):
+        for i in range(self.row_size):
             counterBlock = QLabel(str(i + 1))
             counterBlock.setAlignment(Qt.AlignCenter)
             counterBlock.setFixedSize(minSize - 2, minSize - 2)
             counterBlock.setObjectName("counter_block")
             self.puzzles[str((i + 1, 0))] = counterBlock
             layout.addWidget(counterBlock, i + 1, 0)
-        for j in range(column_size):
+        for j in range(self.column_size):
             counterBlock = QLabel(str(j + 1))
             counterBlock.setAlignment(Qt.AlignCenter)
             counterBlock.setFixedSize(minSize - 2, minSize - 2)
             counterBlock.setObjectName("counter_block")
             self.puzzles[str((0, j + 1))] = counterBlock
             layout.addWidget(counterBlock, 0, j + 1)
-        for i in range(row_size):
-            for j in range(column_size):
+        for i in range(self.row_size):
+            for j in range(self.column_size):
                 pb = PuzzleBolck(i + 1, j + 1)
                 pb.clicked.connect(self.plantTree)
                 pb.rightClicked.connect(self.cutTree)
                 self.puzzles[str((i + 1, j + 1))] = pb
                 layout.addWidget(pb, i +1 , j + 1)
-        for i in range(row_size):
-            nb = NumberBlock(i + 1, column_size + 1, row_size, minSize)
-            self.puzzles[str((i + 1, column_size + 1))] = nb
-            layout.addWidget(nb, i + 1, column_size + 1)
-        for j in range(column_size):
-            nb = NumberBlock(row_size + 1, j + 1, column_size, minSize)
-            self.puzzles[str((row_size + 1, j + 1))] = nb
-            layout.addWidget(nb, row_size + 1, j + 1)
+        for i in range(self.row_size):
+            nb = NumberBlock(i + 1, self.column_size + 1, self.row_size, minSize)
+            self.puzzles[str((i + 1, self.column_size + 1))] = nb
+            layout.addWidget(nb, i + 1, self.column_size + 1)
+        for j in range(self.column_size):
+            nb = NumberBlock(self.row_size + 1, j + 1, self.column_size, minSize)
+            self.puzzles[str((self.row_size + 1, j + 1))] = nb
+            layout.addWidget(nb, self.row_size + 1, j + 1)
 
         self.setLayout(layout)
-        print("created clearlly")
 
     def plantTree(self, i, j):
         self.puzzles[str((i, j))].setPixmap(QPixmap("assets/tree.png"))
+        self.trees.add((i, j))
 
     def cutTree(self, i, j):
         self.puzzles[str((i, j))].setPixmap(QPixmap("assets/bg.png"))
+        self.trees.remove((i, j))
+
+    def getTrees(self):
+        return self.trees
+    
+    def getInputValues(self):
+        return [self.puzzles[str((i + 1, self.column_size + 1))].getValue() for i in range(self.row_size)], [self.puzzles[str((self.row_size + 1, i))].getValue() for i in range(self.column_size)]
 
 
 class InputDialog(QDialog):
@@ -168,7 +181,7 @@ class MainWindow(QMainWindow):
         submitAction.setIcon(QIcon("assets/icon_save.png"))
         submitAction.setShortcut("Ctrl+S")
         submitAction.setStatusTip("Test&Save")
-        newAction.triggered.connect(self.save)
+        newAction.triggered.connect(self.testAndSave)
         quit = menubar.addMenu("Quit")
         quitAction = QAction("Quit", self)
         quitAction.setIcon(QIcon("assets/icon_quit.png"))
@@ -195,8 +208,45 @@ class MainWindow(QMainWindow):
     def newAction(self):
         self.inputDialog.show()
 
-    def save(self):
-        print("save")
+    def testAndSave(self):
+        trees = self.board.getTrees()
+        tents_in_row, tents_in_col = self.board.getInputValues()
+        print("grid: ", self.board.row_size, self.board.column_size, trees, tents_in_row, tents_in_col)
+        return
+        grid = Grid(self.board.row_size, self.board.column_size, trees, tents_in_row, tents_in_col)
+        
+        if not self.save(grid):
+            print("no solution, please reform")
+        else:
+            print("saved")
+    
+    #  @ref Liu Shaoyin
+    def save(self, grid):
+        parser = argparse.ArgumentParser(description="GUI Solve & Save puzzles.")
+        args = parser.parse_args()
+        args.cadical='/Users/macair/Downloads/cadical-sc2020-45029f8/build/cadical'
+
+        solution = solveGrid(args.cadical, grid)
+
+        # Prints the solution
+        if solution == None:
+            return False
+        else:
+            path = '/Users/macair/Documents/GitHub/Project-1-Tents/save.txt'
+            f = open(path, 'a+')   
+            for r in range(grid.height):
+                for c in range(grid.width):
+                    if (r, c) in solution:
+                        f.write('Δ')
+                    elif (r, c) in grid.trees:
+                        f.write('T')
+                    else:
+                        f.write('.')
+                f.write(str(grid.tents_in_row[r])+"\n")
+            for num in grid.tents_in_col:
+                f.write(str(num))
+            return True
+    
 
 app = QApplication([])
 
