@@ -1,10 +1,9 @@
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
-from .. import tents_formula_v2 
-#from tents_formula_v2 import solveGrid,gridInput
 import argparse
 import sys
+#from ..tents_formula_v2 import solveGrid, Grid
 
 class PuzzleBolck(QLabel):
     clicked = pyqtSignal(int, int)
@@ -45,18 +44,19 @@ class NumberBlock(QLineEdit):
         self.setFixedSize(minSize, minSize)
     
     def getValue(self):
-        return int(self.Text())
+        return int(self.text())
 
 
 class Board(QWidget):
-    def __init__(self, size):
+    def __init__(self):
         super().__init__()
         self.puzzles = {}
-        self.trees = {}
-        self.puzzleMaker(size)
+        self.trees = set()
         self.adjustSize()
         self.setObjectName('board')
-        self.setMinimumSize(35*int(size["rowSize"]), 35*int(size["columnSize"]))
+        self.row_size = 0
+        self.column_size = 0
+        #self.setMinimumSize(35*int(size["rowSize"]), 35*int(size["columnSize"]))
 
     def puzzleMaker(self, size):
         self.row_size = int(size["rowSize"])
@@ -107,13 +107,14 @@ class Board(QWidget):
 
     def cutTree(self, i, j):
         self.puzzles[str((i, j))].setPixmap(QPixmap("assets/bg.png"))
-        self.trees.remove((i, j))
+        if (i, j) in self.trees:
+            self.trees.remove((i, j))
 
     def getTrees(self):
         return self.trees
     
     def getInputValues(self):
-        return [self.puzzles[str((i + 1, self.column_size + 1))].getValue() for i in range(self.row_size)], [self.puzzles[str((self.row_size + 1, i))].getValue() for i in range(self.column_size)]
+        return [self.puzzles[str((i + 1, self.column_size + 1))].getValue() for i in range(self.row_size)], [self.puzzles[str((self.row_size + 1, i + 1))].getValue() for i in range(self.column_size)]
 
 
 class InputDialog(QDialog):
@@ -161,6 +162,7 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.inputDialog = InputDialog()
+        self.board = Board()
         self.initGUI()
 
     def initGUI(self):
@@ -181,17 +183,24 @@ class MainWindow(QMainWindow):
         submitAction.setIcon(QIcon("assets/icon_save.png"))
         submitAction.setShortcut("Ctrl+S")
         submitAction.setStatusTip("Test&Save")
-        newAction.triggered.connect(self.testAndSave)
+        submitAction.triggered.connect(self.testAndSave)
         quit = menubar.addMenu("Quit")
         quitAction = QAction("Quit", self)
         quitAction.setIcon(QIcon("assets/icon_quit.png"))
         quitAction.setShortcut("Ctrl+Q")
         quitAction.setStatusTip("Quit puzzle")
         quitAction.triggered.connect(self.close)
+        about = menubar.addMenu("About")
+        aboutAction = QAction("About", self)
+        aboutAction.setIcon(QIcon("assets/icon_new.png"))
+        aboutAction.setShortcut("Ctrl+B")
+        aboutAction.setStatusTip("About")
+        aboutAction.triggered.connect(self.showAbout)
 
         file.addAction(newAction)
         file.addAction(submitAction)
         quit.addAction(quitAction)
+        about.addAction(aboutAction)
     
     def newBoard(self, size):
         #  Add a scroll area in main Window
@@ -201,9 +210,14 @@ class MainWindow(QMainWindow):
         self.scrollArea.setObjectName("board_scroll")
         self.scrollArea.setAlignment(Qt.AlignCenter)
         layout.addWidget(self.scrollArea)
-        self.board = Board(size)
+        self.board.puzzleMaker(size)
         self.scrollArea.setWidget(self.board)
         self.setCentralWidget(self.centralWidget)
+
+    def showAbout(self):
+        with open("information.txt", "r") as f:
+            inf = f.readlines()
+        self.showInformation("About", (" ").join(inf))
 
     def newAction(self):
         self.inputDialog.show()
@@ -211,14 +225,19 @@ class MainWindow(QMainWindow):
     def testAndSave(self):
         trees = self.board.getTrees()
         tents_in_row, tents_in_col = self.board.getInputValues()
-        print("grid: ", self.board.row_size, self.board.column_size, trees, tents_in_row, tents_in_col)
-        return
+        if sum(tents_in_col + tents_in_row) > len(trees):
+            self.showInformation("Error", "The number of tents should be equal to the number of trees, please consider to fix it.")
+            return
+        
         grid = Grid(self.board.row_size, self.board.column_size, trees, tents_in_row, tents_in_col)
         
         if not self.save(grid):
-            print("no solution, please reform")
+            self.showInformation("Warning", "There is no solution for this map!")
         else:
-            print("saved")
+            self.showInformation("Message", "The puzzles has been saved:D")
+    
+    def showInformation(self,typ, text):
+        QMessageBox.information(self, typ, text, QMessageBox.Yes)
     
     #  @ref Liu Shaoyin
     def save(self, grid):
@@ -246,36 +265,37 @@ class MainWindow(QMainWindow):
             for num in grid.tents_in_col:
                 f.write(str(num))
             return True
-    
 
-app = QApplication([])
 
-#  @ref Chen Xiao, Yang Zhu  
-app.setStyleSheet("""
-    QLabel#counter_block { 
-        /* background-color: #d1e7ff; */
-        background-color: #d4e8ff;
-        border-radius: 10px; 
-        font-size: 16px; 
-        font-weight: 500
-    }
-    QScrollArea#board_scroll {
-        background-image: url(""" + 'assets/background1.jpg' + """);
-    }
-    QLineEdit#number_block{
-        background-color: #d4e8ff;
-        border-radius: 10px; 
-        font-size: 16px;
-        border: 1px solid black;
-        font-weight: 500
-    }
-    QWidget#board {
-        /* background-color: #7ca6d7; */
-        background-color: #13394c;
-        border-radius: 10px; 
-    }
-    """)
+if __name__ == '__main__':
+    app = QApplication([])
 
-mw = MainWindow()
-mw.show()
-sys.exit(app.exec_())
+    #  @ref Chen Xiao, Yang Zhu  
+    app.setStyleSheet("""
+        QLabel#counter_block { 
+            /* background-color: #d1e7ff; */
+            background-color: #d4e8ff;
+            border-radius: 10px; 
+            font-size: 16px; 
+            font-weight: 500
+        }
+        QScrollArea#board_scroll {
+            background-image: url(""" + 'assets/background1.jpg' + """);
+        }
+        QLineEdit#number_block{
+            background-color: #d4e8ff;
+            border-radius: 10px; 
+            font-size: 16px;
+            border: 1px solid black;
+            font-weight: 500
+        }
+        QWidget#board {
+            /* background-color: #7ca6d7; */
+            background-color: #13394c;
+            border-radius: 10px; 
+        }
+        """)
+
+    mw = MainWindow()
+    mw.show()
+    sys.exit(app.exec_())
