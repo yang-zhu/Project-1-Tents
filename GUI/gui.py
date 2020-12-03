@@ -1,9 +1,13 @@
-from PyQt5.QtWidgets import *
-from PyQt5.QtGui import *
-from PyQt5.QtCore import *
 import argparse
 import sys
-#from ..tents_formula_v2 import solveGrid, Grid
+import os
+
+from PyQt5.QtCore import *
+from PyQt5.QtGui import *
+from PyQt5.QtWidgets import *
+sys.path.insert(0,os.path.abspath(os.path.join(os.getcwd() , os.pardir)))
+from tents_formula_v2 import solveGrid, Grid
+
 
 class PuzzleBolck(QLabel):
     clicked = pyqtSignal(int, int)
@@ -19,8 +23,9 @@ class PuzzleBolck(QLabel):
         self.setStyleSheet("border: 0.5px solid black")
         self.setPixmap(QPixmap("assets/bg.png"))
         self.setScaledContents(True)
+        self.fixSize = 35
         self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
-        self.setMinimumSize(35, 35)
+        self.setMinimumSize(self.fixSize, self.fixSize)
 
     def mousePressEvent(self, ev):
         if ev.button() == Qt.RightButton:
@@ -61,14 +66,17 @@ class Board(QWidget):
     def puzzleMaker(self, size):
         self.row_size = int(size["rowSize"])
         self.column_size = int(size["columnSize"])
+        self.sizeChecker = 500
+        self.fixSize = 35
+        self.maxSize = 50
         layout = QGridLayout()
         layout.setVerticalSpacing(1)
         layout.setHorizontalSpacing(1)
         maxSize = self.row_size if (self.row_size > self.column_size) else self.column_size
-        if (500 / maxSize) < 50:
-            minSize = 35
+        if (self.sizeChecker / maxSize) < self.maxSize:
+            minSize = self.fixSize
         else:
-            minSize = 50
+            minSize = self.maxSize
         for i in range(self.row_size):
             counterBlock = QLabel(str(i + 1))
             counterBlock.setAlignment(Qt.AlignCenter)
@@ -115,7 +123,10 @@ class Board(QWidget):
     
     def getInputValues(self):
         return [self.puzzles[str((i + 1, self.column_size + 1))].getValue() for i in range(self.row_size)], [self.puzzles[str((self.row_size + 1, i + 1))].getValue() for i in range(self.column_size)]
-
+    
+    def clearBoard(self):
+        print(self.layout.count())
+        return self.layout.count()
 
 class InputDialog(QDialog):
     
@@ -124,8 +135,9 @@ class InputDialog(QDialog):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         #  maximal 10000 * 10000
+        self.maxSize = 100
         self.setWindowTitle("Row * Column")
-        self.intValidator = QIntValidator(1, 100, self)
+        self.intValidator = QIntValidator(1, self.maxSize, self)
 
         self.rowSize = QLineEdit(self)
         self.columnSize = QLineEdit(self)
@@ -163,12 +175,14 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.inputDialog = InputDialog()
         self.board = Board()
+        self.scrollArea = None
         self.initGUI()
 
     def initGUI(self):
         self.setWindowTitle("Puzzle")
         self.setWindowIcon(QIcon("assets/icon.jpg"))
-        self.setMinimumSize(600, 600)
+        self.fixSize = 600
+        self.setMinimumSize(self.fixSize, self.fixSize)
         self.inputDialog.accepted.connect(self.newBoard)
 
         #  set up menu bar
@@ -204,6 +218,9 @@ class MainWindow(QMainWindow):
     
     def newBoard(self, size):
         #  Add a scroll area in main Window
+        if self.scrollArea is not None:  #  there is a board already
+                self.clearBoard()  #  clear scroll area
+        self.board = Board()
         self.centralWidget = QWidget()
         layout = QVBoxLayout(self.centralWidget)
         self.scrollArea = QScrollArea(self.centralWidget)
@@ -213,6 +230,9 @@ class MainWindow(QMainWindow):
         self.board.puzzleMaker(size)
         self.scrollArea.setWidget(self.board)
         self.setCentralWidget(self.centralWidget)
+
+    def clearBoard(self):
+        self.scrollArea.deleteLater()
 
     def showAbout(self):
         with open("information.txt", "r") as f:
@@ -225,17 +245,16 @@ class MainWindow(QMainWindow):
     def testAndSave(self):
         trees = self.board.getTrees()
         tents_in_row, tents_in_col = self.board.getInputValues()
-        if sum(tents_in_col + tents_in_row) > len(trees):
+
+        if sum(tents_in_col + tents_in_row) != len(trees):
             self.showInformation("Error", "The number of tents should be equal to the number of trees, please consider to fix it.")
             return
-        
         grid = Grid(self.board.row_size, self.board.column_size, trees, tents_in_row, tents_in_col)
-        
         if not self.save(grid):
             self.showInformation("Warning", "There is no solution for this map!")
         else:
             self.showInformation("Message", "The puzzles has been saved:D")
-    
+
     def showInformation(self,typ, text):
         QMessageBox.information(self, typ, text, QMessageBox.Yes)
     
@@ -243,6 +262,7 @@ class MainWindow(QMainWindow):
     def save(self, grid):
         parser = argparse.ArgumentParser(description="GUI Solve & Save puzzles.")
         args = parser.parse_args()
+        # TODO: set cadical path
         args.cadical='/Users/macair/Downloads/cadical-sc2020-45029f8/build/cadical'
 
         solution = solveGrid(args.cadical, grid)
@@ -251,6 +271,7 @@ class MainWindow(QMainWindow):
         if solution == None:
             return False
         else:
+            # TODO: set save path
             path = '/Users/macair/Documents/GitHub/Project-1-Tents/save.txt'
             f = open(path, 'a+')   
             for r in range(grid.height):
@@ -276,6 +297,10 @@ if __name__ == '__main__':
             /* background-color: #d1e7ff; */
             background-color: #d4e8ff;
             border-radius: 10px; 
+        border-radius: 10px; 
+            border-radius: 10px; 
+            font-size: 16px; 
+        font-size: 16px; 
             font-size: 16px; 
             font-weight: 500
         }
@@ -285,6 +310,8 @@ if __name__ == '__main__':
         QLineEdit#number_block{
             background-color: #d4e8ff;
             border-radius: 10px; 
+        border-radius: 10px; 
+            border-radius: 10px; 
             font-size: 16px;
             border: 1px solid black;
             font-weight: 500
@@ -292,6 +319,8 @@ if __name__ == '__main__':
         QWidget#board {
             /* background-color: #7ca6d7; */
             background-color: #13394c;
+            border-radius: 10px; 
+        border-radius: 10px; 
             border-radius: 10px; 
         }
         """)
