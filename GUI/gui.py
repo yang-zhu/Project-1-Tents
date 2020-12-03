@@ -5,7 +5,8 @@ import os
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
-sys.path.insert(0,os.path.abspath(os.path.join(os.getcwd() , os.pardir)))
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.getcwd() , os.pardir)))
 from tents_formula_v2 import solveGrid, Grid
 
 
@@ -35,13 +36,13 @@ class PuzzleBolck(QLabel):
 
 
 class NumberBlock(QLineEdit):
-    def __init__(self, i, j, max, minSize):
+    def __init__(self, i, j, max:int, minSize):
         super().__init__()
         self.x = i
         self.y = j
         self.setObjectName("number_block")
         self.setText("0")
-        self.vlidator = QIntValidator(0, max, self)
+        self.vlidator = QIntValidator(0, max, self)  #  TODO: not work
         self.setValidator(self.vlidator)
         self.initUI(minSize)
 
@@ -61,7 +62,6 @@ class Board(QWidget):
         self.setObjectName('board')
         self.row_size = 0
         self.column_size = 0
-        #self.setMinimumSize(35*int(size["rowSize"]), 35*int(size["columnSize"]))
 
     def puzzleMaker(self, size):
         self.row_size = int(size["rowSize"])
@@ -77,33 +77,33 @@ class Board(QWidget):
             minSize = self.fixSize
         else:
             minSize = self.maxSize
-        for i in range(self.row_size):
+        for i in range(self.row_size):  #  counter blocks on left
             counterBlock = QLabel(str(i + 1))
             counterBlock.setAlignment(Qt.AlignCenter)
             counterBlock.setFixedSize(minSize - 2, minSize - 2)
             counterBlock.setObjectName("counter_block")
             self.puzzles[str((i + 1, 0))] = counterBlock
             layout.addWidget(counterBlock, i + 1, 0)
-        for j in range(self.column_size):
+        for j in range(self.column_size):  #  counter blocks on top
             counterBlock = QLabel(str(j + 1))
             counterBlock.setAlignment(Qt.AlignCenter)
             counterBlock.setFixedSize(minSize - 2, minSize - 2)
             counterBlock.setObjectName("counter_block")
             self.puzzles[str((0, j + 1))] = counterBlock
             layout.addWidget(counterBlock, 0, j + 1)
-        for i in range(self.row_size):
+        for i in range(self.row_size):  #  puzzles
             for j in range(self.column_size):
                 pb = PuzzleBolck(i + 1, j + 1)
                 pb.clicked.connect(self.plantTree)
                 pb.rightClicked.connect(self.cutTree)
                 self.puzzles[str((i + 1, j + 1))] = pb
                 layout.addWidget(pb, i +1 , j + 1)
-        for i in range(self.row_size):
-            nb = NumberBlock(i + 1, self.column_size + 1, self.row_size, minSize)
+        for i in range(self.row_size):  #  number blocks on the right
+            nb = NumberBlock(i + 1, self.column_size + 1, self.column_size, minSize)
             self.puzzles[str((i + 1, self.column_size + 1))] = nb
             layout.addWidget(nb, i + 1, self.column_size + 1)
-        for j in range(self.column_size):
-            nb = NumberBlock(self.row_size + 1, j + 1, self.column_size, minSize)
+        for j in range(self.column_size):  #  number blocks on the left
+            nb = NumberBlock(self.row_size + 1, j + 1, self.row_size, minSize)
             self.puzzles[str((self.row_size + 1, j + 1))] = nb
             layout.addWidget(nb, self.row_size + 1, j + 1)
 
@@ -134,16 +134,15 @@ class InputDialog(QDialog):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        #  maximal 10000 * 10000
-        self.maxSize = 100
+        #  maximal 100 * 100
+        self.max = 100
         self.setWindowTitle("Row * Column")
-        self.intValidator = QIntValidator(1, self.maxSize, self)
 
         self.rowSize = QLineEdit(self)
         self.columnSize = QLineEdit(self)
 
-        self.rowSize.setValidator(self.intValidator)
-        self.columnSize.setValidator(self.intValidator)
+        self.rowSize.setValidator(QIntValidator(1, self.max, self))  # not work
+        self.columnSize.setValidator(QIntValidator(1, self.max, self))  # not work
 
         self.rowSize.textEdited[str].connect(self.enable)
         self.columnSize.textEdited[str].connect(self.enable)
