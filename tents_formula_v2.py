@@ -1,6 +1,8 @@
 import subprocess
 import argparse
 from display_solution import display
+import sys
+import time
 
 class Grid:
     def __init__(self, height, width, trees, tents_in_row, tents_in_col):
@@ -9,6 +11,7 @@ class Grid:
         self.width = width
         self.trees = trees
         self.empty = set((r, c) for r in range(height) for c in range(width) if (r, c) not in trees)
+        # self.empty = set((r_n, c_n) for (r, c) in self.trees for (r_n, c_n) in self.treeNeighbors(r, c))
         self.tents_in_row = tents_in_row
         self.tents_in_col = tents_in_col
     
@@ -44,6 +47,19 @@ class Grid:
         for num in self.tents_in_col:
             print(num, end=' ')
         print()
+
+    def printPuzzle(self, f = sys.stdout):
+        print(self.height, self.width, file=f)
+        for r in range(self.height):
+            for c in range(self.width):
+                if (r,c) in self.trees:
+                    print('T', end='', file=f)
+                else:
+                    print('.', end='', file=f)
+            print(' ' + str(self.tents_in_row[r]), file=f)
+        for c in range(self.width):
+            print(self.tents_in_col[c], end=' ', file=f)
+        print(file=f)
     
 
 class GridWithTents(Grid):
@@ -76,19 +92,6 @@ class GridWithTents(Grid):
     
     def withoutTents(self):
         return Grid(self.height, self.width, self.trees, self.tents_in_row, self.tents_in_col)
-    
-    def printPuzzle(self):
-        print(self.height, self.width)
-        for r in range(self.height):
-            for c in range(self.width):
-                if (r,c) in self.trees:
-                    print('T', end='')
-                else:
-                    print('.', end='')
-            print(' ' + str(self.tents_in_row[r]))
-        for c in range(self.width):
-            print(self.tents_in_col[c], end=' ')
-        print()
 
 def gridInput(gridFile):
     '''Reads the grid input.'''
@@ -105,6 +108,8 @@ def gridInput(gridFile):
         tents_in_col = [int(t) for t in f.readline().split()]
         return Grid(height, width, trees, tents_in_row, tents_in_col)
 
+useBinaryAddition = False
+
 def solveGrid(cadical_path, grid, excluded_sol = None):
     clauses = [] # Stores all the clauses
     varDict = {}  # Stores all the generated variables
@@ -114,6 +119,9 @@ def solveGrid(cadical_path, grid, excluded_sol = None):
         if varDescr not in varDict:
             varDict[varDescr] = len(varDict) + 1
         return varDict[varDescr]
+
+    def newVar():
+        return generateVar(len(varDict))
 
     def tentVar(r, c):
         '''Cell at (r, c) contains a tent.'''
@@ -201,25 +209,106 @@ def solveGrid(cadical_path, grid, excluded_sol = None):
                 clauses.append((tentVar(*empty_cells[0]),))
 
         return clauses
+    
+    def halfAdder(b1, b2):
+        bit_sum = newVar()
+        carry = newVar()
+        clauses.append((b1, b2, -bit_sum))
+        clauses.append((b1, -b2, bit_sum))
+        clauses.append((-b1, b2, bit_sum))
+        clauses.append((-b1, -b2, -bit_sum))
+        clauses.append((-b1, -b2, carry))
+        clauses.append((b1, -carry))
+        clauses.append((b2, -carry))
+        return (bit_sum, carry)
 
-    # Every row has exactly the required number of tents
-    for r in range(grid.height):
-        count = grid.tents_in_row[r]
-        clauses += countTents(count, [(r, c) for c in range(grid.width) if (r, c) not in grid.trees])
+    def fullAdder(b1, b2, b3):
+        bit_sum = newVar()
+        carry = newVar()
+        clauses.append((b1, b2, b3, -bit_sum))
+        clauses.append((b1, b2, -b3, bit_sum))
+        clauses.append((b1, -b2, b3, bit_sum))
+        clauses.append((b1, -b2, -b3, -bit_sum))
+        clauses.append((-b1, b2, b3, bit_sum))
+        clauses.append((-b1, b2, -b3, -bit_sum))
+        clauses.append((-b1, -b2, b3, -bit_sum))
+        clauses.append((-b1, -b2, -b3, bit_sum))
+        clauses.append((-b1, -b2, carry))
+        clauses.append((-b1, -b3, carry))
+        clauses.append((-b2, -b3, carry))
+        clauses.append((b1, b2, -carry))
+        clauses.append((b1, b3, -carry))
+        clauses.append((b2, b3, -carry))
+        return (bit_sum, carry) 
 
-    # Every column has exactly the required number of tents
-    for c in range(grid.width):
-        count = grid.tents_in_col[c]
-        clauses += countTents(count, [(r, c) for r in range(grid.height) if (r, c) not in grid.trees])
+    def bitNumPlus(l1, l2):
+        result = []
+        carry = None
+        for (i, pair) in enumerate(zip(l1, l2)):
+            if i == 0:
+                (bit_sum, carry) = halfAdder(*pair)
+                result.append(bit_sum)
+            else:
+                (bit_sum, carry) = fullAdder(*pair, carry)
+                result.append(bit_sum)
+        if len(l1) < len(l2):
+            result.extend(halfAdder(l2[-1], carry))
+        elif len(l1) > len(l2):
+            result.extend(halfAdder(l1[-1], carry))
+        else:
+            result.append(carry)
+        return result
 
+    def bitCount(l):
+        if len(l) == 1:
+            return [tentVar(*l[0])] 
+        else:
+            middle = len(l) // 2
+            return bitNumPlus(bitCount(l[:middle]), bitCount(l[middle:]))
+    
+    def bitCountTents(count, empty_cells):
+        res = bitCount(empty_cells)
+        for i in range(len(res)):
+            bit = count % 2
+            if bit == 0:
+                res[i] = -res[i]
+            count = count // 2
+        return [(lit,) for lit in res]
+    
+    if useBinaryAddition == False:
+        # Every row has exactly the required number of tents
+        for r in range(grid.height):
+            count = grid.tents_in_row[r]
+            clauses += countTents(count, [(r, c) for c in range(grid.width) if (r, c) not in grid.trees])
+
+        # Every column has exactly the required number of tents
+        for c in range(grid.width):
+            count = grid.tents_in_col[c]
+            clauses += countTents(count, [(r, c) for r in range(grid.height) if (r, c) not in grid.trees])
+    else:
+        # Every row has exactly the required number of tents
+        for r in range(grid.height):
+            count = grid.tents_in_row[r]
+            clauses += bitCountTents(count, [(r, c) for c in range(grid.width) if (r, c) not in grid.trees])
+
+        # Every column has exactly the required number of tents
+        for c in range(grid.width):
+            count = grid.tents_in_col[c]
+            clauses += bitCountTents(count, [(r, c) for r in range(grid.height) if (r, c) not in grid.trees])
 
     # Output the clauses in DIMACS CNF format as a string
     res = 'p cnf ' + str(len(varDict)) + ' ' + str(len(clauses)) + '\n'
     res += '\n'.join([' '.join(map(str, clause)) + ' 0' for clause in clauses]) + '\n'
+    
+    # print("running solver with", len(varDict), "variables and", len(clauses), "clauses")
+    # start = time.time()
 
     # Feeds the cnf formula into CaDiCal
     solver_process = subprocess.Popen([cadical_path, '-q'], stdin = subprocess.PIPE, stdout=subprocess.PIPE, encoding='utf8')
     (solution, _) = solver_process.communicate(input = res)
+
+    # end = time.time()
+    # print("solver time:", end - start)
 
     positive = set()  # Stores all the positiv assignments, including the locations of tents
     for line in solution.split('\n'):
