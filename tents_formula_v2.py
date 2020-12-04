@@ -108,9 +108,8 @@ def gridInput(gridFile):
         tents_in_col = [int(t) for t in f.readline().split()]
         return Grid(height, width, trees, tents_in_row, tents_in_col)
 
-useBinaryAddition = False
 
-def solveGrid(cadical_path, grid, excluded_sol = None):
+def solveGrid(cadical_path, grid, excluded_sol = None, tree_without_tent = False, no_binary = False):
     clauses = [] # Stores all the clauses
     varDict = {}  # Stores all the generated variables
 
@@ -159,12 +158,13 @@ def solveGrid(cadical_path, grid, excluded_sol = None):
     for (r, c) in grid.trees:
         neighbor_cells = grid.treeNeighbors(r,c)
 
-        # Every arrow points to a tent
-        clauses += [(-arrowVar(r, c, r1, c1), tentVar(r1, c1)) for (r1, c1) in neighbor_cells]
-        
-        # Every tree has at least one arrow
-        clause = tuple(arrowVar(r, c, r1, c1) for (r1, c1) in neighbor_cells)   
-        clauses.append(clause)    
+        if not tree_without_tent:
+            # Every arrow points to a tent
+            clauses += [(-arrowVar(r, c, r1, c1), tentVar(r1, c1)) for (r1, c1) in neighbor_cells]
+            
+            # Every tree has at least one arrow
+            clause = tuple(arrowVar(r, c, r1, c1) for (r1, c1) in neighbor_cells)   
+            clauses.append(clause)    
         
         # Every tree has at most one arrow
         for ((r1, c1), (r2, c2)) in pair_clause_helper(neighbor_cells):
@@ -179,11 +179,14 @@ def solveGrid(cadical_path, grid, excluded_sol = None):
         clause += [arrowVar(r1, c1, r, c) for (r1, c1) in tree_cells]
         clauses.append(tuple(clause))
         
-        # There is at most one arrow pointing to every tent
-        clauses += [(-arrowVar(r1, c1, r, c), -arrowVar(r2, c2, r, c)) for ((r1, c1), (r2, c2)) in pair_clause_helper(tree_cells)]
+        if not tree_without_tent:
+            # There is at most one arrow pointing to every tent
+            clauses += [(-arrowVar(r1, c1, r, c), -arrowVar(r2, c2, r, c)) for ((r1, c1), (r2, c2)) in pair_clause_helper(tree_cells)]
 
 
     def countTents(count, empty_cells):
+        if not no_binary:
+            return bitCountTents(count, empty_cells)
         if count > len(empty_cells):
             return [(1,),(-1,)]
         clauses = []
@@ -275,26 +278,17 @@ def solveGrid(cadical_path, grid, excluded_sol = None):
             count = count // 2
         return [(lit,) for lit in res]
     
-    if useBinaryAddition == False:
-        # Every row has exactly the required number of tents
-        for r in range(grid.height):
-            count = grid.tents_in_row[r]
-            clauses += countTents(count, [(r, c) for c in range(grid.width) if (r, c) not in grid.trees])
 
-        # Every column has exactly the required number of tents
-        for c in range(grid.width):
-            count = grid.tents_in_col[c]
-            clauses += countTents(count, [(r, c) for r in range(grid.height) if (r, c) not in grid.trees])
-    else:
-        # Every row has exactly the required number of tents
-        for r in range(grid.height):
-            count = grid.tents_in_row[r]
-            clauses += bitCountTents(count, [(r, c) for c in range(grid.width) if (r, c) not in grid.trees])
+    # Every row has exactly the required number of tents
+    for r in range(grid.height):
+        count = grid.tents_in_row[r]
+        clauses += countTents(count, [(r, c) for c in range(grid.width) if (r, c) not in grid.trees])
 
-        # Every column has exactly the required number of tents
-        for c in range(grid.width):
-            count = grid.tents_in_col[c]
-            clauses += bitCountTents(count, [(r, c) for r in range(grid.height) if (r, c) not in grid.trees])
+    # Every column has exactly the required number of tents
+    for c in range(grid.width):
+        count = grid.tents_in_col[c]
+        clauses += countTents(count, [(r, c) for r in range(grid.height) if (r, c) not in grid.trees])
+
 
     # Output the clauses in DIMACS CNF format as a string
     res = 'p cnf ' + str(len(varDict)) + ' ' + str(len(clauses)) + '\n'
@@ -332,10 +326,12 @@ if __name__ == '__main__':
     parser.add_argument('cadical', help='path to CaDiCal')
     parser.add_argument('input_file', help='height of the grid')
     parser.add_argument('-i', '--image', action='store_true', help='display the solution graphically')
+    parser.add_argument('-t','--tree_without_tent', action='store_true', help='allow trees without tents')
+    parser.add_argument('-n', '--no_binary', action='store_true', help='disable binary addition to count tents')
     args = parser.parse_args()
 
     grid = gridInput(args.input_file)
-    solution = solveGrid(args.cadical, grid)
+    solution = solveGrid(args.cadical, grid, tree_without_tent=args.tree_without_tent, no_binary=args.no_binary)
 
     # Prints the solution
     if solution == None:
@@ -344,5 +340,6 @@ if __name__ == '__main__':
         grid.printSolution(solution)
         if args.image:
             display(grid, solution)
+        
     
     
