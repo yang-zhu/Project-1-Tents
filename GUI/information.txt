@@ -1,3 +1,5 @@
+Welcome to Tents!
+
 Rules:
     1. No two tents are adjacent in any of the (up to) 8 directions
    

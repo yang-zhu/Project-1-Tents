@@ -6,9 +6,11 @@ from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.getcwd() , os.pardir)))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__) , os.pardir)))
 from tents_formula_v2 import solveGrid, Grid
 
+def relativePath(filename):
+    return os.path.join(os.path.dirname(__file__), filename)
 
 class PuzzleBolck(QLabel):
     clicked = pyqtSignal(int, int)
@@ -22,7 +24,7 @@ class PuzzleBolck(QLabel):
 
     def initUI(self):
         self.setStyleSheet("border: 0.5px solid black")
-        self.setPixmap(QPixmap("assets/bg.png"))
+        self.setPixmap(QPixmap(relativePath("assets/bg.png")))
         self.setScaledContents(True)
         self.fixSize = 35
         self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
@@ -110,13 +112,13 @@ class Board(QWidget):
         self.setLayout(layout)
 
     def plantTree(self, i, j):
-        self.puzzles[str((i, j))].setPixmap(QPixmap("assets/tree.png"))
-        self.trees.add((i, j))
+        self.puzzles[str((i, j))].setPixmap(QPixmap(relativePath("assets/tree.png")))
+        self.trees.add((i-1, j-1))
 
     def cutTree(self, i, j):
-        self.puzzles[str((i, j))].setPixmap(QPixmap("assets/bg.png"))
-        if (i, j) in self.trees:
-            self.trees.remove((i, j))
+        self.puzzles[str((i, j))].setPixmap(QPixmap(relativePath("assets/bg.png")))
+        if (i-1, j-1) in self.trees:
+            self.trees.remove((i-1, j-1))
 
     def getTrees(self):
         return self.trees
@@ -172,14 +174,21 @@ class MainWindow(QMainWindow):
     
     def __init__(self):
         super().__init__()
+
+        parser = argparse.ArgumentParser(description="Solve 'Tents' puzzles.")
+        parser.add_argument('cadical', help='path to CaDiCal')
+        args = parser.parse_args()
+
         self.inputDialog = InputDialog()
         self.board = Board()
         self.scrollArea = None
+        self.hasPuzzle = False
         self.initGUI()
+        self.solver_path = args.cadical
 
     def initGUI(self):
-        self.setWindowTitle("Puzzle")
-        self.setWindowIcon(QIcon("assets/icon.jpg"))
+        self.setWindowTitle("Tents")
+        self.setWindowIcon(QIcon(relativePath("assets/icon.jpg")))
         self.fixSize = 600
         self.setMinimumSize(self.fixSize, self.fixSize)
         self.inputDialog.accepted.connect(self.newBoard)
@@ -188,27 +197,42 @@ class MainWindow(QMainWindow):
         menubar = self.menuBar()
         file = menubar.addMenu("File")
         newAction = QAction("New", self)
-        newAction.setIcon(QIcon("assets/icon_new.png"))
+        newAction.setIcon(QIcon.fromTheme("document-new"))
         newAction.setShortcut("Ctrl+N")
         newAction.setStatusTip("New puzzle")
         newAction.triggered.connect(self.newAction)
-        submitAction = QAction("Test&Save", self)
-        submitAction.setIcon(QIcon("assets/icon_save.png"))
+        submitAction = QAction("Save", self)
+        submitAction.setIcon(QIcon.fromTheme("document-save"))
         submitAction.setShortcut("Ctrl+S")
-        submitAction.setStatusTip("Test&Save")
+        submitAction.setStatusTip("Save")
         submitAction.triggered.connect(self.testAndSave)
+        submitAction.setEnabled(False)
+        self.submitAction = submitAction
         quit = menubar.addMenu("Quit")
         quitAction = QAction("Quit", self)
-        quitAction.setIcon(QIcon("assets/icon_quit.png"))
+        quitAction.setIcon(QIcon(relativePath("assets/icon_quit.png")))
         quitAction.setShortcut("Ctrl+Q")
         quitAction.setStatusTip("Quit puzzle")
         quitAction.triggered.connect(self.close)
         about = menubar.addMenu("About")
         aboutAction = QAction("About", self)
-        aboutAction.setIcon(QIcon("assets/icon_new.png"))
+        aboutAction.setIcon(QIcon(relativePath("assets/icon_new.png")))
         aboutAction.setShortcut("Ctrl+B")
         aboutAction.setStatusTip("About")
         aboutAction.triggered.connect(self.showAbout)
+
+        solveAction = QAction("Solve", self)
+        solveAction.setIcon(QIcon.fromTheme("media-playback-start"))
+        solveAction.setStatusTip("Solve Puzzle")
+        solveAction.triggered.connect(self.solve)
+        solveAction.setEnabled(False)
+        self.solveAction = solveAction
+
+        # set up toolbar
+        toolbar = self.addToolBar("Actions")
+        toolbar.addAction(newAction)
+        toolbar.addAction(solveAction)
+        toolbar.addAction(submitAction)
 
         file.addAction(newAction)
         file.addAction(submitAction)
@@ -217,8 +241,12 @@ class MainWindow(QMainWindow):
     
     def newBoard(self, size):
         #  Add a scroll area in main Window
-        if self.scrollArea is not None:  #  there is a board already
+        if self.hasPuzzle:  #  there is a board already
                 self.clearBoard()  #  clear scroll area
+        self.hasPuzzle = True
+        self.solveAction.setEnabled(True)
+        self.submitAction.setEnabled(True)
+
         self.board = Board()
         self.centralWidget = QWidget()
         layout = QVBoxLayout(self.centralWidget)
@@ -234,57 +262,74 @@ class MainWindow(QMainWindow):
         self.scrollArea.deleteLater()
 
     def showAbout(self):
-        with open("information.txt", "r") as f:
-            inf = f.readlines()
-        self.showInformation("About", (" ").join(inf))
+        with open(relativePath("information.txt"), "r") as f:
+            inf = f.read()
+        self.showInformation("About", inf)
 
     def newAction(self):
         self.inputDialog.show()
 
     def testAndSave(self):
+        if not self.hasPuzzle:
+            return
         trees = self.board.getTrees()
         tents_in_row, tents_in_col = self.board.getInputValues()
-
-        if sum(tents_in_col + tents_in_row) != len(trees):
-            self.showInformation("Error", "The number of tents should be equal to the number of trees, please consider to fix it.")
-            return
         grid = Grid(self.board.row_size, self.board.column_size, trees, tents_in_row, tents_in_col)
-        if not self.save(grid):
-            self.showInformation("Warning", "There is no solution for this map!")
-        else:
-            self.showInformation("Message", "The puzzles has been saved:D")
+    
+        if self.solve():
+            self.save(grid)
 
     def showInformation(self,typ, text):
-        QMessageBox.information(self, typ, text, QMessageBox.Yes)
-    
-    #  @ref Liu Shaoyin
-    def save(self, grid):
-        parser = argparse.ArgumentParser(description="GUI Solve & Save puzzles.")
-        args = parser.parse_args()
-        # TODO: set cadical path
-        args.cadical='/Users/macair/Downloads/cadical-sc2020-45029f8/build/cadical'
+        msgBox = QMessageBox()
+        if typ == "Message":
+            msgBox.setIcon(QMessageBox.Information)
+        elif typ == "Warning":
+            msgBox.setIcon(QMessageBox.Warning)
+        elif typ == "Error":
+            msgBox.setIcon(QMessageBox.Critical)
+        msgBox.setText(text)
+        msgBox.setWindowTitle(typ)
+        msgBox.setStandardButtons(QMessageBox.Ok)
+        msgBox.exec()
 
-        solution = solveGrid(args.cadical, grid)
+    def clearTents(self):
+        for r in range(self.board.row_size):
+            for c in range(self.board.column_size):
+                if (r,c) not in self.board.trees:
+                    self.board.puzzles[str((r+1, c+1))].setPixmap(QPixmap(relativePath("assets/bg.png")))
 
-        # Prints the solution
-        if solution == None:
+    def solve(self):
+        if not self.hasPuzzle:
+            return
+
+        self.clearTents()
+
+        trees = self.board.getTrees()
+        tents_in_row, tents_in_col = self.board.getInputValues()
+        grid = Grid(self.board.row_size, self.board.column_size, trees, tents_in_row, tents_in_col)
+
+        if sum(tents_in_row) != len(trees) or sum(tents_in_col) != len(trees):
+            self.showInformation("Error", "The number of tents does not match the number of trees.")
             return False
-        else:
-            # TODO: set save path
-            path = '/Users/macair/Documents/GitHub/Project-1-Tents/save.txt'
-            f = open(path, 'a+')   
-            for r in range(grid.height):
-                for c in range(grid.width):
-                    if (r, c) in solution:
-                        f.write('Δ')
-                    elif (r, c) in grid.trees:
-                        f.write('T')
-                    else:
-                        f.write('.')
-                f.write(str(grid.tents_in_row[r])+"\n")
-            for num in grid.tents_in_col:
-                f.write(str(num))
-            return True
+
+        solution = solveGrid(self.solver_path, grid)
+        if solution == None:
+            self.showInformation("Warning", "There is no solution for this puzzle!")
+            return False
+
+        for (r,c) in solution:
+            self.board.puzzles[str((r+1, c+1))].setPixmap(QPixmap(relativePath("assets/tent.png")))
+        return True
+        
+    
+    #  @ref Liu Shaoying
+    def save(self, grid):
+        path = QFileDialog.getSaveFileName()[0]
+        if not path:
+            return
+        with open(path, 'w') as f:
+            grid.printPuzzle(f)
+        self.showInformation("Message", "The puzzle has been saved :D")
 
 
 if __name__ == '__main__':
@@ -294,17 +339,17 @@ if __name__ == '__main__':
     app.setStyleSheet("""
         QLabel#counter_block { 
             /* background-color: #d1e7ff; */
-            background-color: #d4e8ff;
+            background-color: #dddddd;
             border-radius: 10px; 
         border-radius: 10px; 
             border-radius: 10px; 
             font-size: 16px; 
         font-size: 16px; 
             font-size: 16px; 
-            font-weight: 500
+            /*font-weight: 500*/
         }
         QScrollArea#board_scroll {
-            background-image: url(""" + 'assets/background1.jpg' + """);
+            background-image: url(""" + relativePath('assets/background1.jpg') + """);
         }
         QLineEdit#number_block{
             background-color: #d4e8ff;
