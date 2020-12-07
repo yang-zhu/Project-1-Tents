@@ -72,7 +72,7 @@ def display(grid, solution):
         background-color: rgb(201, 187, 113)
     }
     QScrollArea#container {
-        background-image: url(""" + assetPath('background1.jpg') + """);
+        background-image: url(""" + assetPath('background.jpg') + """);
     }
     QWidget#board {
         /* background-color: #7ca6d7; */

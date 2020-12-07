@@ -1,5 +1,5 @@
 import sys
-from tents_formula_v2 import GridWithTents, solveGrid
+from encoding import GridWithTents, solveGrid
 from random import randrange, choice
 
 

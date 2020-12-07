@@ -43,3 +43,7 @@
   ```
   python gui.py <CaDiCal path>
   ```
+
+---
+
+Group: Xiao Chen, Shaoying Liu, Yize Sun, Zhu Yang

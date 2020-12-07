@@ -6,8 +6,8 @@ from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__) , os.pardir)))
-from tents_formula_v2 import solveGrid, Grid
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__))))
+from encoding import solveGrid, Grid
 
 def relativePath(filename):
     return os.path.join(os.path.dirname(__file__), filename)
@@ -349,7 +349,7 @@ if __name__ == '__main__':
             /*font-weight: 500*/
         }
         QScrollArea#board_scroll {
-            background-image: url(""" + relativePath('assets/background1.jpg') + """);
+            background-image: url(""" + relativePath('assets/background.jpg') + """);
         }
         QLineEdit#number_block{
             background-color: #d4e8ff;

@@ -1,6 +1,6 @@
 import os
 from collections import defaultdict
-from tents_formula_v2 import gridInput, solveGrid
+from encoding import gridInput, solveGrid
 import json
 import seaborn as sns
 import matplotlib.pyplot as plt
