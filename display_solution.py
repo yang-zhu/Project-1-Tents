@@ -8,13 +8,11 @@ def assetPath(filename):
     return path.join(path.dirname(__file__), 'assets', filename)
 
 class ShowGrid(QWidget):
-    def __init__(self, g, s, size):
+    def __init__(self, g, s):
         super().__init__()
         self.grid = g
         self.solution = s
         cell_size = 35
-        # if (size.height()-160)/self.grid.height > cell_size:
-        #     cell_size = int((size.height()-160)/self.grid.height)
 
         self.setFixedWidth(cell_size*(self.grid.width+1))
         self.setFixedHeight(cell_size*(self.grid.height+1))
@@ -82,10 +80,9 @@ def display(grid, solution):
         border-radius: 10px; 
     }
     """)
-    screen = app.primaryScreen()
     scrollArea = QScrollArea()
     scrollArea.setObjectName("container")
-    gridWidget = ShowGrid(grid, solution, screen.size())
+    gridWidget = ShowGrid(grid, solution)
     scrollArea.setWidget(gridWidget)
     scrollArea.setAlignment(Qt.AlignCenter)
     scrollArea.setWindowTitle('Tents')

@@ -147,6 +147,9 @@ def solveGrid(cadical_path, grid, excluded_sol=None, tree_without_tent=False, no
     if excluded_sol != None:
         clauses.append(tuple(-tentVar(*cell) for cell in excluded_sol))
     
+    if tree_without_tent and not len(grid.trees) == sum(grid.tents_in_row) == sum(grid.tents_in_col):
+        return None
+
 
     # No two tents are adjacent in any of the (up to) 8 directions
     for (r1, c1) in grid.possible_tents:
@@ -364,7 +367,7 @@ if __name__ == '__main__':
     if solution == None:
         print('UNSATISFIABLE')
     else:
-        # grid.printSolution(solution)
+        grid.printSolution(solution)
         if args.image:
             display(grid, solution)
         

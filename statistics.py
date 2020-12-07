@@ -1,14 +1,17 @@
 import os
 from collections import defaultdict
-from subprocess import TimeoutExpired
 from tents_formula_v2 import gridInput, solveGrid
-from subprocess import TimeoutExpired
 import json
 import seaborn as sns
 import matplotlib.pyplot as plt
+import argparse
 
 def relativePath(filename):
     return os.path.join(os.path.dirname(__file__), filename)
+
+parser = argparse.ArgumentParser()
+parser.add_argument('cadical', help='path to CaDiCal')
+args = parser.parse_args()
 
 if not os.path.isfile('statistics.txt'):
     stats_dict = defaultdict(list)
@@ -17,7 +20,7 @@ if not os.path.isfile('statistics.txt'):
             path = relativePath('puzzles/tents-100x'+str(width)+'-'+str(i)+'.txt')
             grid = gridInput(path)
             
-            stats1 = solveGrid('./cadical', grid, tree_without_tent=True, no_binary = True, return_stats = True, timeout = 30)
+            stats1 = solveGrid(args.cadical, grid, tree_without_tent=True, no_binary = True, return_stats = True, timeout = 30)
             stats_dict['Version'].append('v1')
             stats_dict['Variables'].append(stats1['Variables'])
             stats_dict['Clauses'].append(stats1['Clauses'])
