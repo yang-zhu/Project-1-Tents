@@ -39,7 +39,7 @@
 
 - **gui.py**
 
-  `gui.py` allows to create, solve and save puzzles interactively. The script is run as follows:
+  `gui.py` allows to create, solve and save puzzles interactively. After the grid is generated, trees can be added with left-click and removed with right-click. After a puzzle is solved, it can still be modified. The script can be run as follows:
   ```
   python gui.py <CaDiCal path>
   ```
