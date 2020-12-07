@@ -1,10 +1,10 @@
 # SAT Solving Project 1: Tents
 
-required Python packages: seaborn, pyqt
+**Required Python packages:** seaborn, pyqt
 
 ---
 
-- encoding.py
+- **encoding.py**
 
   `encoding.py` contains the code to encode tents puzzles as CNF formulas. It can be run as script to solve puzzles as follows:
   ```
@@ -19,7 +19,7 @@ required Python packages: seaborn, pyqt
   -n does not use binary addition to count tents, which leads to non-linear encoding complexity.
 
 
-- puzzle_generator.py
+- **puzzle_generator.py**
 
   `puzzle_generator.py` generates puzzles with unique solutions. It can be run as follows:
   ```
@@ -29,7 +29,7 @@ required Python packages: seaborn, pyqt
   The folder `puzzles` contains tents puzzles generated using this script.
 
 
-- statistics.py
+- **statistics.py**
 
   `statistics.py` solves puzzles in the `puzzles` folder using three different configurations of `encoding.py` and measures the performance. Used measurements are number of variables, number of clauses and runtime of CaDiCal. The script stores the results in a file called `statistics.txt`. If this file already exists in the current directory, it loads the data from the file instead of measuring again. The loaded data will be displayed as three graphs. The script can be run as follows:
   ```
@@ -37,9 +37,9 @@ required Python packages: seaborn, pyqt
   ```
 
 
-- gui.py
+- **gui.py**
 
-  gui.py allows to create, solve and save puzzles interactively. The script is run as follows:
+  `gui.py` allows to create, solve and save puzzles interactively. The script is run as follows:
   ```
   python gui.py <CaDiCal path>
   ```
