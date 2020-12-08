@@ -7,10 +7,8 @@ from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__))))
-from encoding import solveGrid, Grid
+from encoding import solveGrid, Grid, assetsPath
 
-def relativePath(*path):
-    return os.path.join(os.path.dirname(__file__), *path)
 
 class PuzzleBolck(QLabel):
     clicked = pyqtSignal(int, int)
@@ -24,7 +22,7 @@ class PuzzleBolck(QLabel):
 
     def initUI(self):
         self.setStyleSheet("border: 0.5px solid black")
-        self.setPixmap(QPixmap(relativePath("assets", "bg.png")))
+        self.setPixmap(QPixmap(assetsPath("bg.png")))
         self.setScaledContents(True)
         self.fixSize = 35
         self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
@@ -112,13 +110,13 @@ class Board(QWidget):
         self.setLayout(layout)
 
     def plantTree(self, i, j):
-        self.puzzles[str((i, j))].setPixmap(QPixmap(relativePath("assets", "tree.png")))
+        self.puzzles[str((i, j))].setPixmap(QPixmap(assetsPath("tree.png")))
         self.trees.add((i-1, j-1))
 
     def cutTree(self, i, j):
-        self.puzzles[str((i, j))].setPixmap(QPixmap(relativePath("assets", "bg.png")))
-        if (i-1, j-1) in self.trees:
-            self.trees.remove((i-1, j-1))
+        self.puzzles[str((i, j))].setPixmap(QPixmap(assetsPath("bg.png")))
+        if (i - 1, j - 1) in self.trees:
+            self.trees.remove((i - 1, j - 1))
 
     def getTrees(self):
         return self.trees
@@ -172,23 +170,18 @@ class InputDialog(QDialog):
 
 class MainWindow(QMainWindow):
     
-    def __init__(self):
+    def __init__(self, solver_path):
         super().__init__()
-
-        parser = argparse.ArgumentParser(description="Solve 'Tents' puzzles.")
-        parser.add_argument('cadical', help='path to CaDiCal')
-        args = parser.parse_args()
-
         self.inputDialog = InputDialog()
         self.board = Board()
         self.scrollArea = None
         self.hasPuzzle = False
         self.initGUI()
-        self.solver_path = args.cadical
+        self.solver_path = solver_path
 
     def initGUI(self):
         self.setWindowTitle("Tents")
-        self.setWindowIcon(QIcon(relativePath("assets", "icon.jpg")))
+        self.setWindowIcon(QIcon(assetsPath("icon.jpg")))
         self.fixSize = 600
         self.setMinimumSize(self.fixSize, self.fixSize)
         self.inputDialog.accepted.connect(self.newBoard)
@@ -197,12 +190,12 @@ class MainWindow(QMainWindow):
         menubar = self.menuBar()
         file = menubar.addMenu("File")
         newAction = QAction("New", self)
-        newAction.setIcon(QIcon.fromTheme("document-new"))
+        newAction.setIcon(QIcon(assetsPath("icon_new.png")))
         newAction.setShortcut("Ctrl+N")
         newAction.setStatusTip("New puzzle")
         newAction.triggered.connect(self.newAction)
         submitAction = QAction("Save", self)
-        submitAction.setIcon(QIcon.fromTheme("document-save"))
+        submitAction.setIcon(QIcon(assetsPath("icon_save.png")))
         submitAction.setShortcut("Ctrl+S")
         submitAction.setStatusTip("Save")
         submitAction.triggered.connect(self.testAndSave)
@@ -210,13 +203,13 @@ class MainWindow(QMainWindow):
         self.submitAction = submitAction
         quit = menubar.addMenu("Quit")
         quitAction = QAction("Quit", self)
-        quitAction.setIcon(QIcon(relativePath("assets", "icon_quit.png")))
+        quitAction.setIcon(QIcon(assetsPath("icon_quit.png")))
         quitAction.setShortcut("Ctrl+Q")
         quitAction.setStatusTip("Quit puzzle")
         quitAction.triggered.connect(self.close)
         about = menubar.addMenu("About")
         aboutAction = QAction("About", self)
-        aboutAction.setIcon(QIcon(relativePath("assets", "icon_new.png")))
+        aboutAction.setIcon(QIcon(assetsPath("icon.jpg")))
         aboutAction.setShortcut("Ctrl+B")
         aboutAction.setStatusTip("About")
         aboutAction.triggered.connect(self.showAbout)
@@ -230,9 +223,7 @@ class MainWindow(QMainWindow):
 
         # set up toolbar
         toolbar = self.addToolBar("Actions")
-        toolbar.addAction(newAction)
         toolbar.addAction(solveAction)
-        toolbar.addAction(submitAction)
 
         file.addAction(newAction)
         file.addAction(submitAction)
@@ -262,7 +253,7 @@ class MainWindow(QMainWindow):
         self.scrollArea.deleteLater()
 
     def showAbout(self):
-        with open(relativePath("information.txt"), "r") as f:
+        with open(assetsPath("information.txt"), "r") as f:
             inf = f.read()
         self.showInformation("About", inf)
 
@@ -279,16 +270,21 @@ class MainWindow(QMainWindow):
         if self.solve():
             self.save(grid)
 
-    def showInformation(self,typ, text):
+    def showInformation(self, typ, text):
         msgBox = QMessageBox()
-        if typ == "Message":
-            msgBox.setIcon(QMessageBox.Information)
-        elif typ == "Warning":
-            msgBox.setIcon(QMessageBox.Warning)
-        elif typ == "Error":
-            msgBox.setIcon(QMessageBox.Critical)
+        if typ == "Success":
+            pixmap = QPixmap(assetsPath("icon_success.png"))
+        elif typ == "Remind":
+            pixmap = QPixmap(assetsPath("icon_remind.png"))
+        elif typ == "About":
+            pixmap = QPixmap(assetsPath("icon_About.jpg"))
+        elif typ == "Message":
+            pixmap = QPixmap(assetsPath("icon_information.jpg"))
+
+        msgBox.setIconPixmap(pixmap)
         msgBox.setText(text)
         msgBox.setWindowTitle(typ)
+        msgBox.setWindowIcon(QIcon(assetsPath("icon.jpg")))
         msgBox.setStandardButtons(QMessageBox.Ok)
         msgBox.exec()
 
@@ -296,7 +292,7 @@ class MainWindow(QMainWindow):
         for r in range(self.board.row_size):
             for c in range(self.board.column_size):
                 if (r,c) not in self.board.trees:
-                    self.board.puzzles[str((r+1, c+1))].setPixmap(QPixmap(relativePath("assets", "bg.png")))
+                    self.board.puzzles[str((r + 1, c + 1))].setPixmap(QPixmap(assetsPath("bg.png")))
 
     def solve(self):
         if not self.hasPuzzle:
@@ -309,37 +305,56 @@ class MainWindow(QMainWindow):
         grid = Grid(self.board.row_size, self.board.column_size, trees, tents_in_row, tents_in_col)
 
         if sum(tents_in_row) != len(trees) or sum(tents_in_col) != len(trees):
-            self.showInformation("Error", "The number of tents does not match the number of trees.")
+            self.showInformation("Remind", "The given number of tents does not match the number of trees.")
             return False
 
         solution = solveGrid(self.solver_path, grid)
         if solution == None:
-            self.showInformation("Warning", "There is no solution for this puzzle!")
+            self.showInformation("Remind", "There is no solution for this puzzle!")
             return False
 
         for (r,c) in solution:
-            self.board.puzzles[str((r+1, c+1))].setPixmap(QPixmap(relativePath("assets", "tent.png")))
+            self.board.puzzles[str((r + 1, c + 1))].setPixmap(QPixmap(assetsPath("tent.png")))
         return True
         
-    
-    #  @ref Liu Shaoying
     def save(self, grid):
         path = QFileDialog.getSaveFileName()[0]
         if not path:
             return
         with open(path, 'w') as f:
             grid.printPuzzle(f)
-        self.showInformation("Message", "The puzzle has been saved :D")
+        self.showInformation("Success", "The puzzle has been saved :D")
 
 
-if __name__ == '__main__':
-    app = QApplication([])
+def getArgs():
+    parser = argparse.ArgumentParser(description="Solve 'Tents' puzzles.")
+    parser.add_argument('cadical', help='path to CaDiCal')
+    return parser.parse_args()
 
-    #  @ref Chen Xiao, Yang Zhu  
-    app.setStyleSheet("""
+def getCadical():
+    return getArgs().cadical
+
+
+class StyleFactory:
+    def __init__(self, app):
+        self.app = app
+        self.stylesheets = dict()
+        self.initStyle()
+
+    def initStyle(self):
+        bg_img = assetsPath('background.jpg')
+        self.stylesheets["Default"] = self.styleMaker(bg_img)
+        self.app.setStyleSheet(self.getStyleSheet("Default"))
+
+    def getStyleSheet(self, subject:str):
+        return self.stylesheets[subject]
+    
+    def styleMaker(self, bg_img):
+        #  stylesheet @ref Chen Xiao, Yang Zhu
+        stylesheet = """
         QLabel#counter_block { 
             /* background-color: #d1e7ff; */
-            background-color: #dddddd;
+            background-color: #c0ebd7;
             border-radius: 10px; 
         border-radius: 10px; 
             border-radius: 10px; 
@@ -349,10 +364,10 @@ if __name__ == '__main__':
             /*font-weight: 500*/
         }
         QScrollArea#board_scroll {
-            background-image: url(""" + relativePath('assets/background.jpg') + """);
+            background-image: url(""" + bg_img + """);
         }
         QLineEdit#number_block{
-            background-color: #d4e8ff;
+            background-color: #f2be45;
             border-radius: 10px; 
         border-radius: 10px; 
             border-radius: 10px; 
@@ -367,8 +382,20 @@ if __name__ == '__main__':
         border-radius: 10px; 
             border-radius: 10px; 
         }
-        """)
+        """
+        return stylesheet
 
-    mw = MainWindow()
+    def setbg(self, subject:str, path:str):
+        bg_img = path
+        self.stylesheets[subject] = self.styleMaker(bg_img)
+        print(self.getStyleSheet(subject))
+        self.app.setStyleSheet(self.getStyleSheet(subject))
+  
+
+if __name__ == '__main__':
+    app = QApplication([])
+    styleFactory = StyleFactory(app)
+    styleFactory.setbg("testStyle", assetsPath('testbg.png'))
+    mw = MainWindow(solver_path=getCadical())
     mw.show()
     sys.exit(app.exec_())

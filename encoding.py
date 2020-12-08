@@ -4,6 +4,7 @@ from display_solution import display
 import sys
 import time
 import math
+import os
 
 class Grid:
     def __init__(self, height, width, trees, tents_in_row, tents_in_col):
@@ -350,16 +351,22 @@ def solveGrid(cadical_path, grid, excluded_sol=None, tree_without_tent=False, no
     
     return tents
 
-
-if __name__ == '__main__':
+def getArgs():
     parser = argparse.ArgumentParser(description="Solve 'Tents' puzzles.")
     parser.add_argument('cadical', help='path to CaDiCal')
     parser.add_argument('input_file', help='height of the grid')
     parser.add_argument('-i', '--image', action='store_true', help='display the solution graphically')
     parser.add_argument('-t','--tree_without_tent', action='store_true', help='allow trees without tents')
     parser.add_argument('-n', '--no_binary', action='store_true', help='disable binary addition to count tents')
-    args = parser.parse_args()
+    
+    return  parser.parse_args()
 
+def assetsPath(filename):
+    return os.path.join(os.path.dirname(__file__), "assets", filename)
+
+
+if __name__ == '__main__':
+    args = getArgs()
     grid = gridInput(args.input_file)
     solution = solveGrid(args.cadical, grid, tree_without_tent=args.tree_without_tent, no_binary=args.no_binary)
 
