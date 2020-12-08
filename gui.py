@@ -9,8 +9,8 @@ from PyQt5.QtWidgets import *
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__))))
 from encoding import solveGrid, Grid
 
-def relativePath(filename):
-    return os.path.join(os.path.dirname(__file__), filename)
+def relativePath(*path):
+    return os.path.join(os.path.dirname(__file__), *path)
 
 class PuzzleBolck(QLabel):
     clicked = pyqtSignal(int, int)
@@ -24,7 +24,7 @@ class PuzzleBolck(QLabel):
 
     def initUI(self):
         self.setStyleSheet("border: 0.5px solid black")
-        self.setPixmap(QPixmap(relativePath("assets/bg.png")))
+        self.setPixmap(QPixmap(relativePath("assets", "bg.png")))
         self.setScaledContents(True)
         self.fixSize = 35
         self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
@@ -112,11 +112,11 @@ class Board(QWidget):
         self.setLayout(layout)
 
     def plantTree(self, i, j):
-        self.puzzles[str((i, j))].setPixmap(QPixmap(relativePath("assets/tree.png")))
+        self.puzzles[str((i, j))].setPixmap(QPixmap(relativePath("assets", "tree.png")))
         self.trees.add((i-1, j-1))
 
     def cutTree(self, i, j):
-        self.puzzles[str((i, j))].setPixmap(QPixmap(relativePath("assets/bg.png")))
+        self.puzzles[str((i, j))].setPixmap(QPixmap(relativePath("assets", "bg.png")))
         if (i-1, j-1) in self.trees:
             self.trees.remove((i-1, j-1))
 
@@ -188,7 +188,7 @@ class MainWindow(QMainWindow):
 
     def initGUI(self):
         self.setWindowTitle("Tents")
-        self.setWindowIcon(QIcon(relativePath("assets/icon.jpg")))
+        self.setWindowIcon(QIcon(relativePath("assets", "icon.jpg")))
         self.fixSize = 600
         self.setMinimumSize(self.fixSize, self.fixSize)
         self.inputDialog.accepted.connect(self.newBoard)
@@ -210,13 +210,13 @@ class MainWindow(QMainWindow):
         self.submitAction = submitAction
         quit = menubar.addMenu("Quit")
         quitAction = QAction("Quit", self)
-        quitAction.setIcon(QIcon(relativePath("assets/icon_quit.png")))
+        quitAction.setIcon(QIcon(relativePath("assets", "icon_quit.png")))
         quitAction.setShortcut("Ctrl+Q")
         quitAction.setStatusTip("Quit puzzle")
         quitAction.triggered.connect(self.close)
         about = menubar.addMenu("About")
         aboutAction = QAction("About", self)
-        aboutAction.setIcon(QIcon(relativePath("assets/icon_new.png")))
+        aboutAction.setIcon(QIcon(relativePath("assets", "icon_new.png")))
         aboutAction.setShortcut("Ctrl+B")
         aboutAction.setStatusTip("About")
         aboutAction.triggered.connect(self.showAbout)
@@ -296,7 +296,7 @@ class MainWindow(QMainWindow):
         for r in range(self.board.row_size):
             for c in range(self.board.column_size):
                 if (r,c) not in self.board.trees:
-                    self.board.puzzles[str((r+1, c+1))].setPixmap(QPixmap(relativePath("assets/bg.png")))
+                    self.board.puzzles[str((r+1, c+1))].setPixmap(QPixmap(relativePath("assets", "bg.png")))
 
     def solve(self):
         if not self.hasPuzzle:
@@ -318,7 +318,7 @@ class MainWindow(QMainWindow):
             return False
 
         for (r,c) in solution:
-            self.board.puzzles[str((r+1, c+1))].setPixmap(QPixmap(relativePath("assets/tent.png")))
+            self.board.puzzles[str((r+1, c+1))].setPixmap(QPixmap(relativePath("assets", "tent.png")))
         return True
         
     
