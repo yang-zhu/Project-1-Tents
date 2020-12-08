@@ -1,24 +1,26 @@
 import os
 from collections import defaultdict
-from encoding import gridInput, solveGrid
+from encoding import Grid, solveGrid
 import json
 import seaborn as sns
 import matplotlib.pyplot as plt
 import argparse
 
-def relativePath(filename):
-    return os.path.join(os.path.dirname(__file__), filename)
+def relativePath(*path):
+    return os.path.join(os.path.dirname(__file__), *path)
 
 parser = argparse.ArgumentParser()
 parser.add_argument('cadical', help='path to CaDiCal')
 args = parser.parse_args()
 
+# Solve puzzles and store the statistics in "statistics.txt". The sizes of the puzzles range from 100*10 to 100*120 with an interval of 10 regarding the width.
+# If "statistics.txt" already exists, then read the data from this file instead.
 if not os.path.isfile('statistics.txt'):
     stats_dict = defaultdict(list)
     for width in range(10,121,10):
         for i in range(1,11):
             path = relativePath('puzzles/tents-100x'+str(width)+'-'+str(i)+'.txt')
-            grid = gridInput(path)
+            grid = Grid.fromFile(path)
             
             stats1 = solveGrid(args.cadical, grid, tree_without_tent=True, no_binary = True, return_stats = True, timeout = 30)
             stats_dict['Version'].append('v1')
@@ -47,6 +49,7 @@ else:
     with open('./statistics.txt') as f:
         stats_dict = json.loads(f.read())          
 
+# Displays the statistics in three plots. 
 fig, axs = plt.subplots(ncols=3)
 fig.canvas.set_window_title('Statistics')
 plt.subplots_adjust(bottom=0.3, top=0.9)
