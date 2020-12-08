@@ -1,6 +1,6 @@
 # SAT Solving Project 1: Tents
 
-**Required Python packages:** seaborn, pyqt
+**Required Python packages:** seaborn, pyqt5
 
 ---
 
