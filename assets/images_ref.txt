@@ -1,0 +1,48 @@
+icon.jpg, icon_About:
+made by: Han Mingwen(韓明文)
+License: Free for personal use only. Commercial usage: Not allowed. The products or characters depicted in these images are © by their respective authors.
+http://www.dashangu.com/postimg_10010040.html
+
+icon_information.png:
+made by: Offnfopt
+License: CC0 1.0 Verzicht auf das Copyright
+https://de.wikipedia.org/wiki/Datei:Info_icon-72a7cf.svg
+Image resized from 2000*2000 to 60*60
+
+icon_new:
+Icon made by: JRAOUI Chihab
+License: CC Atribution
+Icon pack: Circle Content Icons
+Link: https://icon-icons.com/icon/flat-style-circle-add/66944
+Image size: 512*215
+
+icon_quit:
+License: flaction License
+<div>Icons made by <a href="https://www.flaticon.com/authors/pixel-perfect" title="Pixel perfect">Pixel perfect</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></div>
+
+icon_remind:
+License: flaction License
+<div>Icons made by <a href="https://www.flaticon.com/authors/vectors-market" title="Vectors Market">Vectors Market</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></div>
+
+icon_save:
+Icon made by: JRAOUI Chihab
+License: CC Atribution
+Icon pack: Circle Content Icons
+Link: https: //icon-icons.com/icon/flat-style-circle-save/66942
+Image size: 512*215
+
+icon_success:
+License: flaction License
+<div>Icons made by <a href="https://www.flaticon.com/authors/pixel-perfect" title="Pixel perfect">Pixel perfect</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></div>
+Image resized from 512*512 to 60*60
+
+icon_warning:
+License: Free for personal use only. Commercial usage: Not allowed. The products or characters depicted in these images are © by their respective authors.
+Link: https://www.stickpng.com/img/miscellaneous/safety-symbols-and-signs/warning-icon
+Image resized from 2400*2400 to 60*60
+
+tent:
+made by: unknown
+
+tree:
+made by: unknown
