@@ -325,14 +325,14 @@ def solveGrid(cadical_path, grid, excluded_sol=None, tree_without_tent=False, no
     res = 'p cnf ' + str(len(varDict)) + ' ' + str(len(clauses)) + '\n'
     res += '\n'.join([' '.join(map(str, clause)) + ' 0' for clause in clauses]) + '\n'
     
-    # Record the statistics: number of variables, number of clauses, running time of CaDiCal.
+    # Record the statistics: number of variables, number of clauses, running time of CaDiCaL.
     stats = {}  
     stats['Variables'] = len(varDict)
     stats['Clauses'] = len(clauses)
 
     start = time.time()
 
-    # Feed the CNF formula into CaDiCal.
+    # Feed the CNF formula into CaDiCaL.
     solver_process = subprocess.Popen([cadical_path, '-q'], stdin = subprocess.PIPE, stdout=subprocess.PIPE, encoding='utf8')
     try:
         (solution, _) = solver_process.communicate(input = res, timeout = timeout)
@@ -370,7 +370,7 @@ def solveGrid(cadical_path, grid, excluded_sol=None, tree_without_tent=False, no
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Solve 'Tents' puzzles.")
-    parser.add_argument('cadical', help='path to CaDiCal')
+    parser.add_argument('cadical', help='path to CaDiCaL')
     parser.add_argument('input_file', help='height of the grid')
     parser.add_argument('-i', '--image', action='store_true', help='display the solution graphically')
     parser.add_argument('-t','--tree_without_tent', action='store_true', help='allow trees without tents')

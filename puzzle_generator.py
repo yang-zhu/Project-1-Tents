@@ -20,7 +20,7 @@ def fillGrid(grid):
 
 # Output error message when the input is illegal.
 if len(sys.argv) != 4:
-    print('Please input four arguments: <path of the CaDiCal prorgam> <number of rows> <number of columns>')
+    print('Please input four arguments: <path of the CaDiCaL prorgam> <number of rows> <number of columns>')
     exit(1)
 
 # Create a grid filled with trees and tents.

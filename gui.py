@@ -176,7 +176,7 @@ class MainWindow(QMainWindow):
         super().__init__()
 
         parser = argparse.ArgumentParser(description="Solve 'Tents' puzzles.")
-        parser.add_argument('cadical', help='path to CaDiCal')
+        parser.add_argument('cadical', help='path to CaDiCaL')
         args = parser.parse_args()
 
         self.inputDialog = InputDialog()

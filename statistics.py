@@ -10,7 +10,7 @@ def relativePath(*path):
     return os.path.join(os.path.dirname(__file__), *path)
 
 parser = argparse.ArgumentParser()
-parser.add_argument('cadical', help='path to CaDiCal')
+parser.add_argument('cadical', help='path to CaDiCaL')
 args = parser.parse_args()
 
 # Solve puzzles and store the statistics in "statistics.txt". The sizes of the puzzles range from 100*10 to 100*120 with an interval of 10 regarding the width.
