@@ -233,7 +233,7 @@ class MainWindow(QMainWindow):
     def newBoard(self, size):
         #  Add a scroll area in main Window
         if self.hasPuzzle:  #  there is a board already
-                self.clearBoard()  #  clear scroll area
+            self.clearBoard()  #  clear scroll area
         self.hasPuzzle = True
         self.solveAction.setEnabled(True)
         self.submitAction.setEnabled(True)
