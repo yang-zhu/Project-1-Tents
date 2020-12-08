@@ -1,0 +1,13 @@
+Welcome to Tents!
+
+Rules:
+    1. No two tents are adjacent in any of the (up to) 8 directions
+   
+    2. The number of tents in each row/column matches the number sepecifed
+   
+    3. It is possible to match tents to trees 1:1, such that each tree is orthogonally adjacent to its own tent(but may also be adjacent to other tents)
+
+
+
+@Group: 
+Xiao Chen / Shaoying Liu / Yize Sun / Zhu Yang
