@@ -11,6 +11,7 @@ from encoding import solveGrid, Grid, assetsPath
 
 
 class PuzzleBolck(QLabel):
+    """Puzzle area, which can be selceted to set tree or tent on it"""
     clicked = pyqtSignal(int, int)
     rightClicked = pyqtSignal(int, int)
 
@@ -36,6 +37,7 @@ class PuzzleBolck(QLabel):
 
 
 class NumberBlock(QLineEdit):
+    """Number area to set number of tents on columns or rows"""
     def __init__(self, i, j, max: int, minSize):
         super().__init__()
         self.x = i
@@ -54,6 +56,7 @@ class NumberBlock(QLineEdit):
 
 
 class Board(QWidget):
+    """Board, which have all puzzle, number, counter blocks"""
     def __init__(self):
         super().__init__()
         self.puzzles = {}
@@ -133,11 +136,11 @@ class Board(QWidget):
         ]
 
     def clearBoard(self):
-        print(self.layout.count())
         return self.layout.count()
 
 
 class InputDialog(QDialog):
+    """Input dialog to set the board size"""
 
     accepted = pyqtSignal(dict)
 
@@ -168,7 +171,7 @@ class InputDialog(QDialog):
     def enable(self):
         if self.rowSize.text() and self.columnSize.text():
             self.button.setEnabled(True)
-        else:
+        else:  
             self.button.setDisabled(True)
 
     def create(self):
@@ -181,6 +184,7 @@ class InputDialog(QDialog):
 
 
 class MainWindow(QMainWindow):
+    """The main window of gui, which include board"""
     def __init__(self, solver_path, styleFactory):
         super().__init__()
         self.inputDialog = InputDialog()
@@ -201,6 +205,7 @@ class MainWindow(QMainWindow):
         #  set up menu bar
         menubar = self.menuBar()
         file = menubar.addMenu("File")
+        view = menubar.addMenu("View")
         newAction = QAction("New", self)
         newAction.setIcon(QIcon(assetsPath("icon_new.png")))
         newAction.setShortcut("Ctrl+N")
@@ -225,20 +230,38 @@ class MainWindow(QMainWindow):
         aboutAction.setShortcut("Ctrl+B")
         aboutAction.setStatusTip("About")
         aboutAction.triggered.connect(self.showAbout)
+        defaultView = QAction("Default", self)
+        defaultView.setIcon(QIcon(assetsPath("background.jpg")))
+        defaultView.setStatusTip("Default view")
+        defaultView.triggered.connect(self.setDefaultView)
+        christmasView = QAction("Christmas", self)
+        christmasView.setIcon(QIcon(assetsPath("christmas.jpg")))
+        christmasView.setStatusTip("Christmas view")
+        christmasView.triggered.connect(self.setChrismasView)
+        galaxyView = QAction("Galaxy", self)
+        galaxyView.setIcon(QIcon(assetsPath("galaxy.jpg")))
+        galaxyView.setStatusTip("Galaxy view")
+        galaxyView.triggered.connect(self.setGalaxyView)
 
+        file.addAction(newAction)
+        file.addAction(submitAction)
+        view.addAction(defaultView)
+        view.addAction(christmasView)
+        view.addAction(galaxyView)
+        quit.addAction(quitAction)
+        about.addAction(aboutAction)
+
+        # set up toolbar
         solveAction = QAction("Solve", self)
         solveAction.setIcon(QIcon.fromTheme("media-playback-start"))
         solveAction.setStatusTip("Solve Puzzle")
         solveAction.triggered.connect(self.solve)
         solveAction.setEnabled(False)
         self.solveAction = solveAction
-
         tbNewAction = QAction("New", self)
         tbNewAction.setIcon(QIcon.fromTheme("document-new"))
         tbNewAction.setStatusTip("New puzzle")
         tbNewAction.triggered.connect(self.newAction)
-        
-
         tbSubmitAction = QAction("Save", self)
         tbSubmitAction.setIcon(QIcon.fromTheme("document-save"))
         tbSubmitAction.setStatusTip("Save")
@@ -246,16 +269,10 @@ class MainWindow(QMainWindow):
         tbSubmitAction.setEnabled(False)
         self.tbSubmitAction = tbSubmitAction
 
-        # set up toolbar
         toolbar = self.addToolBar("Actions")
         toolbar.addAction(tbNewAction)
         toolbar.addAction(solveAction)
         toolbar.addAction(tbSubmitAction)
-
-        file.addAction(newAction)
-        file.addAction(submitAction)
-        quit.addAction(quitAction)
-        about.addAction(aboutAction)
 
     def newBoard(self, size):
         #  Add a scroll area in main Window
@@ -265,7 +282,6 @@ class MainWindow(QMainWindow):
         self.solveAction.setEnabled(True)
         self.submitAction.setEnabled(True)
         self.tbSubmitAction.setEnabled(True)
-
 
         self.board = Board()
         self.centralWidget = QWidget()
@@ -305,13 +321,14 @@ class MainWindow(QMainWindow):
         if self.solve():
             self.save(grid)
     
-    def switchBackground(self, subject:str):
-        if subject == "Default":
-            self.styleFactory.setbg(subject, assetsPath("background.jpg"))
-        elif subject == "Christmas":
-            self.styleFactory.setbg(subject, assetsPath("testbg.png"))
-        elif subject == "Technical":
-            self.styleFactory.setbg(subject, assetsPath("testbg.png"))
+    def setDefaultView(self):
+        self.styleFactory.setbg("Default", assetsPath("background.jpg"))
+
+    def setChrismasView(self):
+        self.styleFactory.setbg("Christmas", assetsPath("christmas.jpg"))
+
+    def setGalaxyView(self):
+        self.styleFactory.setbg("Galaxy", assetsPath("galaxy.jpg"))
 
     def showInformation(self, typ, text):
         msgBox = QMessageBox()
@@ -374,7 +391,7 @@ class MainWindow(QMainWindow):
         return True
 
     def save(self, grid):
-        path = QFileDialog.getSaveFileName()[0]
+        path = QFileDialog.getSaveFileName()[0] + ".cnf"
         if not path:
             return
         with open(path, "w") as f:
@@ -383,6 +400,7 @@ class MainWindow(QMainWindow):
 
 
 class StyleFactory:
+    """Style factory to make new background of board"""
     def __init__(self, app):
         self.app = app
         self.stylesheets = dict()
@@ -439,17 +457,17 @@ class StyleFactory:
     def setbg(self, subject: str, path: str):
         bg_img = path
         self.stylesheets[subject] = self.styleMaker(bg_img)
-        print(self.getStyleSheet(subject))
         self.app.setStyleSheet(self.getStyleSheet(subject))
 
 
 def getArgs():
+    """Load args by starting"""
     parser = argparse.ArgumentParser(description="Solve 'Tents' puzzles.")
     parser.add_argument("cadical", help="path to CaDiCal")
     return parser.parse_args()
 
-
 def getCadical():
+    """Get argument cadical as cadical path"""
     return getArgs().cadical
 
 
