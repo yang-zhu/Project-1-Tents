@@ -6,7 +6,7 @@ from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__))))
+#sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__))))
 from encoding import solveGrid, Grid
 from display_solution import assetsPath
 
