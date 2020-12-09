@@ -122,8 +122,8 @@ class GridWithTents(Grid):  # used for generating puzzles
 
 
 def solveGrid(cadical_path, grid, excluded_sol=None, tree_without_tent=False, no_binary=False, return_stats=False, timeout=None):
-    clauses = [] # Stores all the clauses
-    varDict = {}  # Stores all the generated variables
+    clauses = [] # stores all the clauses
+    varDict = {}  # stores all the generated variables
 
     def generateVar(varDescr):
         '''Generates a variable from the variable description.'''
@@ -151,17 +151,17 @@ def solveGrid(cadical_path, grid, excluded_sol=None, tree_without_tent=False, no
         '''The generated variable means that the cells from (start_row, start_col) to (end_row, end_col) contain count many tents.'''
         return generateVar(('count', count, start_row, start_col, end_row, end_col))
 
-    # Generates impossible clauses for future use, namely when the number of expected tents in a row/column is larger than the number of empty cells. See countTents.
+    # Generate impossible clauses for future use, namely when the number of expected tents in a row/column is larger than the number of empty cells. See countTents.
     dummyVar = newVar()
     impossible_clauses = [(dummyVar,), (-dummyVar,)]
 
 
-    # Rules out the given solution (for generating puzzles with unique solutions).
+    # Rule out the given solution (for generating puzzles with unique solutions).
     if excluded_sol != None:
         clauses.append(tuple(-tentVar(*cell) for cell in excluded_sol))
 
 
-    # Aborts the encoding immediately after detecting the mismatch between the number of trees and tents globally.
+    # Abort the encoding immediately after detecting the mismatch between the number of trees and tents globally.
     if tree_without_tent and not len(grid.trees) == sum(grid.tents_in_row) == sum(grid.tents_in_col):
         return None
 
@@ -174,7 +174,7 @@ def solveGrid(cadical_path, grid, excluded_sol=None, tree_without_tent=False, no
 
 
     def pair_clause_helper(lis):
-        '''Chooses 2 variables out of a list to build clauses.'''
+        '''All possibilities to choose two variables out of a list.'''
         return [(ele1, ele2) for ele1 in lis for ele2 in lis if ele2 != ele1]
 
     for (r, c) in grid.trees:
