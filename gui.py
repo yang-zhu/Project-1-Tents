@@ -44,7 +44,7 @@ class NumberBlock(QLineEdit):
         self.y = j
         self.setObjectName("number_block")
         self.setText("0")
-        self.validator = QIntValidator(0, max, self)  #  TODO: not work
+        self.validator = QIntValidator(0, max, self)  # set input validator
         self.setValidator(self.validator)
         self.initUI(minSize)
 
@@ -155,8 +155,8 @@ class InputDialog(QDialog):
         self.rowSize = QLineEdit(self)
         self.columnSize = QLineEdit(self)
 
-        self.rowSize.setValidator(QIntValidator(1, self.max, self))  # not work
-        self.columnSize.setValidator(QIntValidator(1, self.max, self))  # not work
+        self.rowSize.setValidator(QIntValidator(1, self.max, self)) # set input validator
+        self.columnSize.setValidator(QIntValidator(1, self.max, self)) # set input validator
 
         self.rowSize.textEdited[str].connect(self.enable)
         self.columnSize.textEdited[str].connect(self.enable)
