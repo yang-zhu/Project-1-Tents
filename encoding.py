@@ -378,9 +378,6 @@ def getArgs():
     
     return  parser.parse_args()
 
-def assetsPath(filename):
-    return os.path.join(os.path.dirname(__file__), "assets", filename)
-
 
 if __name__ == '__main__':
     args = getArgs()

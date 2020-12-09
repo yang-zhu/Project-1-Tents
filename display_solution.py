@@ -4,7 +4,7 @@ from PyQt5.QtCore import Qt
 import sys
 from os import path
 
-def assetPath(filename):
+def assetsPath(filename):
     return path.join(path.dirname(__file__), 'assets', filename)
 
 class ShowGrid(QWidget):
@@ -17,8 +17,8 @@ class ShowGrid(QWidget):
         self.setFixedWidth(cell_size*(self.grid.width+1))
         self.setFixedHeight(cell_size*(self.grid.height+1))
 
-        tent = QPixmap(assetPath('tent.png'))
-        tree = QPixmap(assetPath('tree.png'))
+        tent = QPixmap(assetsPath('tent.png'))
+        tree = QPixmap(assetsPath('tree.png'))
 
         layout = QGridLayout()
         layout.setVerticalSpacing(1)
@@ -72,7 +72,7 @@ def display(grid, solution):
         background-color: rgb(201, 187, 113)
     }
     QScrollArea#container {
-        background-image: url(""" + assetPath('background.jpg') + """);
+        background-image: url(""" + assetsPath('background.jpg') + """);
     }
     QWidget#board {
         /* background-color: #7ca6d7; */
