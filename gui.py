@@ -391,7 +391,7 @@ class MainWindow(QMainWindow):
         return True
 
     def save(self, grid):
-        path = QFileDialog.getSaveFileName()[0] + ".cnf"
+        path = QFileDialog.getSaveFileName()[0]
         if not path:
             return
         with open(path, "w") as f:
