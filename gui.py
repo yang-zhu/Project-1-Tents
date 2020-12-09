@@ -6,7 +6,6 @@ from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 
-#sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__))))
 from encoding import solveGrid, Grid
 from display_solution import assetsPath
 
@@ -419,7 +418,6 @@ class StyleFactory:
         return self.stylesheets[subject]
 
     def styleMaker(self, bg_img):
-        #  stylesheet @ref Chen Xiao, Yang Zhu
         stylesheet = (
             """
         QLabel#counter_block { 
@@ -466,18 +464,15 @@ class StyleFactory:
 
 def getArgs():
     """Load args by starting"""
-    parser = argparse.ArgumentParser(description="Solve 'Tents' puzzles.")
+    parser = argparse.ArgumentParser()
     parser.add_argument("cadical", help="path to CaDiCal")
     return parser.parse_args()
 
-def getCadical():
-    """Get argument cadical as cadical path"""
-    return getArgs().cadical
-
 
 if __name__ == "__main__":
+    args = getArgs()
     app = QApplication([])
     styleFactory = StyleFactory(app)
-    mw = MainWindow(solver_path=getCadical(), styleFactory=styleFactory)
+    mw = MainWindow(solver_path=args.cadical, styleFactory=styleFactory)
     mw.show()
     sys.exit(app.exec_())
