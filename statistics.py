@@ -51,7 +51,7 @@ else:
     with open('./statistics.txt') as f:
         stats_dict = json.loads(f.read())          
 
-# Displays the statistics in three plots. 
+# Display the statistics in three plots. 
 fig, axs = plt.subplots(ncols=3)
 fig.canvas.set_window_title('Statistics')
 plt.subplots_adjust(bottom=0.3, top=0.9)
