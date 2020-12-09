@@ -332,6 +332,7 @@ class MainWindow(QMainWindow):
 
     def showInformation(self, typ, text):
         msgBox = QMessageBox()
+        pixmap = QPixmap(assetsPath("icon_information.jpg"))
         if typ == "Success":
             pixmap = QPixmap(assetsPath("icon_success.png"))
         elif typ == "Remind":
