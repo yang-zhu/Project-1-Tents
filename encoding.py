@@ -378,17 +378,13 @@ def getArgs():
     
     return  parser.parse_args()
 
-<<<<<<< HEAD
 def assetsPath(filename):
     return os.path.join(os.path.dirname(__file__), "assets", filename)
 
 
 if __name__ == '__main__':
     args = getArgs()
-    grid = gridInput(args.input_file)
-=======
     grid = Grid.fromFile(args.input_file)
->>>>>>> main
     solution = solveGrid(args.cadical, grid, tree_without_tent=args.tree_without_tent, no_binary=args.no_binary)
 
     # Print the solution on the terminal and displays the solution graphically when the flag -i is enabled.

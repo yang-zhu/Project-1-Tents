@@ -44,14 +44,16 @@ class NumberBlock(QLineEdit):
         self.y = j
         self.setObjectName("number_block")
         self.setText("0")
-        self.vlidator = QIntValidator(0, max, self)  #  TODO: not work
-        self.setValidator(self.vlidator)
+        self.validator = QIntValidator(0, max, self)  #  TODO: not work
+        self.setValidator(self.validator)
         self.initUI(minSize)
 
     def initUI(self, minSize):
         self.setFixedSize(minSize, minSize)
 
     def getValue(self):
+        if self.text() == "":
+            self.setText("0")
         return int(self.text())
 
 
