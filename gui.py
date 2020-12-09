@@ -36,7 +36,7 @@ class PuzzleBolck(QLabel):
 
 
 class NumberBlock(QLineEdit):
-    def __init__(self, i, j, max:int, minSize):
+    def __init__(self, i, j, max: int, minSize):
         super().__init__()
         self.x = i
         self.y = j
@@ -48,7 +48,7 @@ class NumberBlock(QLineEdit):
 
     def initUI(self, minSize):
         self.setFixedSize(minSize, minSize)
-    
+
     def getValue(self):
         return int(self.text())
 
@@ -59,7 +59,7 @@ class Board(QWidget):
         self.puzzles = {}
         self.trees = set()
         self.adjustSize()
-        self.setObjectName('board')
+        self.setObjectName("board")
         self.row_size = 0
         self.column_size = 0
 
@@ -72,7 +72,9 @@ class Board(QWidget):
         layout = QGridLayout()
         layout.setVerticalSpacing(1)
         layout.setHorizontalSpacing(1)
-        maxSize = self.row_size if (self.row_size > self.column_size) else self.column_size
+        maxSize = (
+            self.row_size if (self.row_size > self.column_size) else self.column_size
+        )
         if (self.sizeChecker / maxSize) < self.maxSize:
             minSize = self.fixSize
         else:
@@ -97,7 +99,7 @@ class Board(QWidget):
                 pb.clicked.connect(self.plantTree)
                 pb.rightClicked.connect(self.cutTree)
                 self.puzzles[str((i + 1, j + 1))] = pb
-                layout.addWidget(pb, i +1 , j + 1)
+                layout.addWidget(pb, i + 1, j + 1)
         for i in range(self.row_size):  #  number blocks on the right
             nb = NumberBlock(i + 1, self.column_size + 1, self.column_size, minSize)
             self.puzzles[str((i + 1, self.column_size + 1))] = nb
@@ -111,7 +113,7 @@ class Board(QWidget):
 
     def plantTree(self, i, j):
         self.puzzles[str((i, j))].setPixmap(QPixmap(assetsPath("tree.png")))
-        self.trees.add((i-1, j-1))
+        self.trees.add((i - 1, j - 1))
 
     def cutTree(self, i, j):
         self.puzzles[str((i, j))].setPixmap(QPixmap(assetsPath("bg.png")))
@@ -120,16 +122,23 @@ class Board(QWidget):
 
     def getTrees(self):
         return self.trees
-    
+
     def getInputValues(self):
-        return [self.puzzles[str((i + 1, self.column_size + 1))].getValue() for i in range(self.row_size)], [self.puzzles[str((self.row_size + 1, i + 1))].getValue() for i in range(self.column_size)]
-    
+        return [
+            self.puzzles[str((i + 1, self.column_size + 1))].getValue()
+            for i in range(self.row_size)
+        ], [
+            self.puzzles[str((self.row_size + 1, i + 1))].getValue()
+            for i in range(self.column_size)
+        ]
+
     def clearBoard(self):
         print(self.layout.count())
         return self.layout.count()
 
+
 class InputDialog(QDialog):
-    
+
     accepted = pyqtSignal(dict)
 
     def __init__(self, *args, **kwargs):
@@ -163,14 +172,16 @@ class InputDialog(QDialog):
             self.button.setDisabled(True)
 
     def create(self):
-        size = {"rowSize": self.rowSize.text(), "columnSize": self.columnSize.text()}
+        size = {
+            "rowSize": self.rowSize.text(),
+            "columnSize": self.columnSize.text(),
+        }
         self.accepted.emit(size)
         self.accept()
 
 
 class MainWindow(QMainWindow):
-    
-    def __init__(self, solver_path):
+    def __init__(self, solver_path, styleFactory):
         super().__init__()
         self.inputDialog = InputDialog()
         self.board = Board()
@@ -178,6 +189,7 @@ class MainWindow(QMainWindow):
         self.hasPuzzle = False
         self.initGUI()
         self.solver_path = solver_path
+        self.styleFactory = styleFactory
 
     def initGUI(self):
         self.setWindowTitle("Tents")
@@ -221,15 +233,30 @@ class MainWindow(QMainWindow):
         solveAction.setEnabled(False)
         self.solveAction = solveAction
 
+        tbNewAction = QAction("New", self)
+        tbNewAction.setIcon(QIcon.fromTheme("document-new"))
+        tbNewAction.setStatusTip("New puzzle")
+        tbNewAction.triggered.connect(self.newAction)
+        
+
+        tbSubmitAction = QAction("Save", self)
+        tbSubmitAction.setIcon(QIcon.fromTheme("document-save"))
+        tbSubmitAction.setStatusTip("Save")
+        tbSubmitAction.triggered.connect(self.testAndSave)
+        tbSubmitAction.setEnabled(False)
+        self.tbSubmitAction = tbSubmitAction
+
         # set up toolbar
         toolbar = self.addToolBar("Actions")
+        toolbar.addAction(tbNewAction)
         toolbar.addAction(solveAction)
+        toolbar.addAction(tbSubmitAction)
 
         file.addAction(newAction)
         file.addAction(submitAction)
         quit.addAction(quitAction)
         about.addAction(aboutAction)
-    
+
     def newBoard(self, size):
         #  Add a scroll area in main Window
         if self.hasPuzzle:  #  there is a board already
@@ -237,6 +264,8 @@ class MainWindow(QMainWindow):
         self.hasPuzzle = True
         self.solveAction.setEnabled(True)
         self.submitAction.setEnabled(True)
+        self.tbSubmitAction.setEnabled(True)
+
 
         self.board = Board()
         self.centralWidget = QWidget()
@@ -265,10 +294,24 @@ class MainWindow(QMainWindow):
             return
         trees = self.board.getTrees()
         tents_in_row, tents_in_col = self.board.getInputValues()
-        grid = Grid(self.board.row_size, self.board.column_size, trees, tents_in_row, tents_in_col)
-    
+        grid = Grid(
+            self.board.row_size,
+            self.board.column_size,
+            trees,
+            tents_in_row,
+            tents_in_col,
+        )
+
         if self.solve():
             self.save(grid)
+    
+    def switchBackground(self, subject:str):
+        if subject == "Default":
+            self.styleFactory.setbg(subject, assetsPath("background.jpg"))
+        elif subject == "Christmas":
+            self.styleFactory.setbg(subject, assetsPath("testbg.png"))
+        elif subject == "Technical":
+            self.styleFactory.setbg(subject, assetsPath("testbg.png"))
 
     def showInformation(self, typ, text):
         msgBox = QMessageBox()
@@ -291,8 +334,10 @@ class MainWindow(QMainWindow):
     def clearTents(self):
         for r in range(self.board.row_size):
             for c in range(self.board.column_size):
-                if (r,c) not in self.board.trees:
-                    self.board.puzzles[str((r + 1, c + 1))].setPixmap(QPixmap(assetsPath("bg.png")))
+                if (r, c) not in self.board.trees:
+                    self.board.puzzles[str((r + 1, c + 1))].setPixmap(
+                        QPixmap(assetsPath("bg.png"))
+                    )
 
     def solve(self):
         if not self.hasPuzzle:
@@ -302,10 +347,19 @@ class MainWindow(QMainWindow):
 
         trees = self.board.getTrees()
         tents_in_row, tents_in_col = self.board.getInputValues()
-        grid = Grid(self.board.row_size, self.board.column_size, trees, tents_in_row, tents_in_col)
+        grid = Grid(
+            self.board.row_size,
+            self.board.column_size,
+            trees,
+            tents_in_row,
+            tents_in_col,
+        )
 
         if sum(tents_in_row) != len(trees) or sum(tents_in_col) != len(trees):
-            self.showInformation("Remind", "The given number of tents does not match the number of trees.")
+            self.showInformation(
+                "Remind",
+                "The given number of tents does not match the number of trees.",
+            )
             return False
 
         solution = solveGrid(self.solver_path, grid)
@@ -313,26 +367,19 @@ class MainWindow(QMainWindow):
             self.showInformation("Remind", "There is no solution for this puzzle!")
             return False
 
-        for (r,c) in solution:
-            self.board.puzzles[str((r + 1, c + 1))].setPixmap(QPixmap(assetsPath("tent.png")))
+        for (r, c) in solution:
+            self.board.puzzles[str((r + 1, c + 1))].setPixmap(
+                QPixmap(assetsPath("tent.png"))
+            )
         return True
-        
+
     def save(self, grid):
         path = QFileDialog.getSaveFileName()[0]
         if not path:
             return
-        with open(path, 'w') as f:
+        with open(path, "w") as f:
             grid.printPuzzle(f)
         self.showInformation("Success", "The puzzle has been saved :D")
-
-
-def getArgs():
-    parser = argparse.ArgumentParser(description="Solve 'Tents' puzzles.")
-    parser.add_argument('cadical', help='path to CaDiCal')
-    return parser.parse_args()
-
-def getCadical():
-    return getArgs().cadical
 
 
 class StyleFactory:
@@ -342,19 +389,20 @@ class StyleFactory:
         self.initStyle()
 
     def initStyle(self):
-        bg_img = assetsPath('background.jpg')
+        bg_img = assetsPath("background.jpg")
         self.stylesheets["Default"] = self.styleMaker(bg_img)
         self.app.setStyleSheet(self.getStyleSheet("Default"))
 
-    def getStyleSheet(self, subject:str):
+    def getStyleSheet(self, subject: str):
         return self.stylesheets[subject]
-    
+
     def styleMaker(self, bg_img):
         #  stylesheet @ref Chen Xiao, Yang Zhu
-        stylesheet = """
+        stylesheet = (
+            """
         QLabel#counter_block { 
             /* background-color: #d1e7ff; */
-            background-color: #c0ebd7;
+            background-color: #dddddd;
             border-radius: 10px; 
         border-radius: 10px; 
             border-radius: 10px; 
@@ -364,10 +412,12 @@ class StyleFactory:
             /*font-weight: 500*/
         }
         QScrollArea#board_scroll {
-            background-image: url(""" + bg_img + """);
+            background-image: url("""
+            + bg_img
+            + """);
         }
         QLineEdit#number_block{
-            background-color: #f2be45;
+            background-color: #d4e8ff;
             border-radius: 10px; 
         border-radius: 10px; 
             border-radius: 10px; 
@@ -383,19 +433,29 @@ class StyleFactory:
             border-radius: 10px; 
         }
         """
+        )
         return stylesheet
 
-    def setbg(self, subject:str, path:str):
+    def setbg(self, subject: str, path: str):
         bg_img = path
         self.stylesheets[subject] = self.styleMaker(bg_img)
         print(self.getStyleSheet(subject))
         self.app.setStyleSheet(self.getStyleSheet(subject))
-  
 
-if __name__ == '__main__':
+
+def getArgs():
+    parser = argparse.ArgumentParser(description="Solve 'Tents' puzzles.")
+    parser.add_argument("cadical", help="path to CaDiCal")
+    return parser.parse_args()
+
+
+def getCadical():
+    return getArgs().cadical
+
+
+if __name__ == "__main__":
     app = QApplication([])
     styleFactory = StyleFactory(app)
-    styleFactory.setbg("testStyle", assetsPath('testbg.png'))
-    mw = MainWindow(solver_path=getCadical())
+    mw = MainWindow(solver_path=getCadical(), styleFactory=styleFactory)
     mw.show()
     sys.exit(app.exec_())

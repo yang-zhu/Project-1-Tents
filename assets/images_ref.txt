@@ -6,7 +6,7 @@ http://www.dashangu.com/postimg_10010040.html
 icon_information.png:
 made by: Offnfopt
 License: CC0 1.0 Verzicht auf das Copyright
-https://de.wikipedia.org/wiki/Datei:Info_icon-72a7cf.svg
+Link: https://de.wikipedia.org/wiki/Datei:Info_icon-72a7cf.svg
 Image resized from 2000*2000 to 60*60
 
 icon_new:
