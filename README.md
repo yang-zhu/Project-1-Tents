@@ -3,6 +3,7 @@
 **Required Python packages:** seaborn, pyqt5
 
 On Linux pyqt5 requires Qt to be installed. On Ubuntu, the package python3-pyqt5 is sufficient.
+
 ---
 
 - **encoding.py**
